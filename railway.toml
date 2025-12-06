@@ -40,14 +40,17 @@ restartPolicyMaxRetries = 10
 NODE_ENV = "production"
 PORT = "5000"
 
-# MongoDB Configuration (if using MongoDB Atlas)
-# MONGODB_URI = "mongodb+srv://user:pass@cluster.mongodb.net/dbname"
+# MongoDB Configuration - REQUIRED
+# Set this in Railway dashboard to your MongoDB Atlas URI
+# Format: mongodb+srv://username:password@cluster.mongodb.net/database
+# MONGODB_URI will be set via Railway environment variables
 
-# JWT Secret for authentication
-# JWT_SECRET = "your-secret-key"
+# JWT Secret for authentication - REQUIRED
+# Set this in Railway dashboard to a secure random string
+# JWT_SECRET will be set via Railway environment variables
 
-# API Base URL
-# VITE_API_URL = "https://your-railway-app.up.railway.app/api"
+# API Base URL (for frontend to connect to backend)
+# VITE_API_URL will be set to your Railway app's public URL
 
 # =============================================================================
 # DEPLOYMENT INSTRUCTIONS

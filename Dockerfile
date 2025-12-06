@@ -1,56 +1,56 @@
-# Multi-stage build for monorepo deployment
+# ============================
+# 1. Builder Stage
+# ============================
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy root package files and lock files
+# Copy root package files
 COPY package.json package-lock.json* ./
 
-# Copy workspace packages
-COPY apps/client/frontend/package.json ./apps/client/frontend/
-COPY apps/client/frontend/package-lock.json* ./apps/client/frontend/
+# Copy workspace package files
 COPY server/package.json ./server/
 COPY server/package-lock.json* ./server/
+COPY apps/client/frontend/package.json ./apps/client/frontend/
+COPY apps/client/frontend/package-lock.json* ./apps/client/frontend/
 
-# Install dependencies for monorepo
-RUN npm install 
+# Install root deps (for workspace scripts)
+RUN npm install
 
-# Copy all source code
+# Copy entire monorepo
 COPY . .
 
-# Build all workspaces
-RUN npm run build --workspaces --if-present
+# Build client
+RUN npm run build --workspace=apps/client/frontend
 
-# Production stage
+# ============================
+# 2. Production Stage
+# ============================
 FROM node:20-alpine
 
-WORKDIR /app
+# Runtime directory is server (important for Railway env vars)
+WORKDIR /app/server
 
-# Copy root package files and lock files from builder
-COPY --from=builder /app/package.json /app/package-lock.json* ./
+# Copy server package files
+COPY server/package.json server/package-lock.json* ./
 
-# Copy workspace packages from builder
-COPY --from=builder /app/apps/client/frontend/package.json ./apps/client/frontend/
-COPY --from=builder /app/apps/client/frontend/package-lock.json* ./apps/client/frontend/
-COPY --from=builder /app/server/package.json ./server/
-COPY --from=builder /app/server/package-lock.json* ./server/
+# Install server dependencies using npm install
+RUN npm install --omit=dev
 
-# Install production dependencies only
-RUN npm ci --omit=dev
+# Copy server source code
+COPY --from=builder /app/server/src ./src
 
-# Copy built applications from builder
-COPY --from=builder /app/server/src ./server/src
-COPY --from=builder /app/apps/client/frontend/dist ./apps/client/frontend/dist
+# Copy built client (dist) into server if server needs to serve it
+COPY --from=builder /app/apps/client/frontend/dist ../apps/client/frontend/dist
 
-# Create uploads directory for server
-RUN mkdir -p server/uploads
+# Ensure uploads folder exists
+RUN mkdir -p uploads
 
-# Expose port
+# Expose API port
 EXPOSE 5000
 
-# Set environment
+# Environment
 ENV NODE_ENV=production
 
 # Start server
-CMD ["npm", "run", "start", "--workspace=server"]
+CMD ["npm", "start"]
