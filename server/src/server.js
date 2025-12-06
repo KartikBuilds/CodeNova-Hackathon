@@ -18,9 +18,12 @@ const startServer = async () => {
     
     // Start server after successful DB connection
     server = app.listen(PORT, HOST, () => {
-      console.log(`Server running on http://${HOST}:${PORT}`);
+      console.log(`\n========================================`);
+      console.log(`Server is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`Health check: http://${HOST}:${PORT}/api/health`);
+      console.log(`Address: http://${HOST}:${PORT}`);
+      console.log(`API Health: http://${HOST}:${PORT}/api/health`);
+      console.log(`========================================\n`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
