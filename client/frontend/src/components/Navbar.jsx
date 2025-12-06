@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -6,17 +6,87 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [learningDropdownOpen, setLearningDropdownOpen] = useState(false);
+  const [aiToolsDropdownOpen, setAiToolsDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const learningDropdownRef = useRef(null);
+  const aiToolsDropdownRef = useRef(null);
+  const userDropdownRef = useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (learningDropdownRef.current && !learningDropdownRef.current.contains(event.target)) {
+        setLearningDropdownOpen(false);
+      }
+      if (aiToolsDropdownRef.current && !aiToolsDropdownRef.current.contains(event.target)) {
+        setAiToolsDropdownOpen(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const NavLink = ({ to, children }) => (
     <Link 
       to={to} 
       className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors duration-200 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-indigo-600 after:transition-all hover:after:w-full"
       onClick={() => setMobileMenuOpen(false)}
+    >
+      {children}
+    </Link>
+  );
+
+  const DropdownButton = ({ children, isOpen, onClick }) => (
+    <button 
+      onClick={onClick}
+      className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 ease-out flex items-center gap-1 rounded-lg ${
+        isOpen 
+          ? 'text-indigo-600 bg-indigo-50 shadow-sm' 
+          : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
+      } after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-indigo-600 after:transition-all after:duration-300 ${
+        isOpen ? 'after:w-full' : 'after:w-0 hover:after:w-full'
+      }`}
+    >
+      {children}
+      <svg className={`w-4 h-4 transition-all duration-300 ease-out ${isOpen ? 'rotate-180 text-indigo-600' : 'rotate-0'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  );
+
+  const DropdownMenu = ({ children, isOpen }) => (
+    <div className={`absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 backdrop-blur-sm py-2 z-50 transition-all duration-300 ease-out ${
+      isOpen 
+        ? 'opacity-100 visible transform translate-y-0 scale-100' 
+        : 'opacity-0 invisible transform -translate-y-4 scale-95 pointer-events-none'
+    }`}>
+      <div className={`transition-all duration-300 ease-out ${isOpen ? 'delay-75' : ''}`}>
+        {children}
+      </div>
+    </div>
+  );
+
+  const DropdownLink = ({ to, children, onClick }) => (
+    <Link 
+      to={to} 
+      className="group block px-4 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:text-indigo-700 transition-all duration-200 ease-out rounded-lg mx-1 transform hover:translate-x-1"
+      onClick={() => {
+        setMobileMenuOpen(false);
+        setLearningDropdownOpen(false);
+        setAiToolsDropdownOpen(false);
+        setUserDropdownOpen(false);
+        onClick?.();
+      }}
     >
       {children}
     </Link>
@@ -41,23 +111,78 @@ const Navbar = () => {
               <>
                 <NavLink to="/catalog">Catalog</NavLink>
                 <NavLink to="/dashboard">Dashboard</NavLink>
-                <NavLink to="/path">Learning Path</NavLink>
-                <NavLink to="/plan">Learning Plan</NavLink>
-                <NavLink to="/tutor">AI Tutor</NavLink>
-                <NavLink to="/flashcards">Flashcards</NavLink>
-                <NavLink to="/rag">Doc Q&A</NavLink>
-                <NavLink to="/profile">Profile</NavLink>
                 
-                <div className="flex items-center gap-3 ml-4 pl-4 border-l border-slate-200">
-                  <span className="text-sm text-slate-600 font-medium">
-                    {user?.name}
-                  </span>
-                  <button 
-                    onClick={handleLogout} 
-                    className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:shadow-lg hover:shadow-indigo-500/25 transform hover:-translate-y-0.5 transition-all duration-200"
+                {/* Learning Dropdown */}
+                <div className="relative" ref={learningDropdownRef}>
+                  <DropdownButton 
+                    isOpen={learningDropdownOpen} 
+                    onClick={() => setLearningDropdownOpen(!learningDropdownOpen)}
                   >
-                    Logout
-                  </button>
+                    Learning
+                  </DropdownButton>
+                  <DropdownMenu isOpen={learningDropdownOpen}>
+                    <DropdownLink to="/path">Learning Path</DropdownLink>
+                    <DropdownLink to="/plan">Learning Plan</DropdownLink>
+                    <DropdownLink to="/flashcards">Flashcards</DropdownLink>
+                  </DropdownMenu>
+                </div>
+
+                {/* AI Tools Dropdown */}
+                <div className="relative" ref={aiToolsDropdownRef}>
+                  <DropdownButton 
+                    isOpen={aiToolsDropdownOpen} 
+                    onClick={() => setAiToolsDropdownOpen(!aiToolsDropdownOpen)}
+                  >
+                    AI Tools
+                  </DropdownButton>
+                  <DropdownMenu isOpen={aiToolsDropdownOpen}>
+                    <DropdownLink to="/tutor">AI Tutor</DropdownLink>
+                    <DropdownLink to="/rag">Doc Q&A</DropdownLink>
+                  </DropdownMenu>
+                </div>
+                
+                {/* User Dropdown */}
+                <div className="flex items-center ml-4 pl-4 border-l border-slate-200">
+                  <div className="relative" ref={userDropdownRef}>
+                    <button 
+                      onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                      className={`flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all duration-300 ease-out rounded-lg ${
+                        userDropdownOpen 
+                          ? 'text-indigo-600 bg-indigo-50 shadow-sm scale-105' 
+                          : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50 hover:scale-102'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs transition-all duration-300 ease-out ${
+                        userDropdownOpen ? 'ring-2 ring-indigo-200 shadow-lg' : 'hover:shadow-md'
+                      }`}>
+                        {user?.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                      <span className="hidden lg:block transition-all duration-200">{user?.name}</span>
+                      <svg className={`w-4 h-4 transition-all duration-300 ease-out ${userDropdownOpen ? 'rotate-180 text-indigo-600' : 'rotate-0'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    <DropdownMenu isOpen={userDropdownOpen}>
+                      <DropdownLink to="/profile">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Profile
+                        </div>
+                      </DropdownLink>
+                      <hr className="my-1 border-slate-100" />
+                      <button 
+                        onClick={handleLogout} 
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 transition-all duration-200 ease-out flex items-center gap-2 rounded-lg mx-1 transform hover:translate-x-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                      </button>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </>
             ) : (

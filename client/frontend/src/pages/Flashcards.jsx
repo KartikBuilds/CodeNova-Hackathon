@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { flashcardsAPI } from '../api/learningAPI';
 
 const STORAGE_KEY = 'ai-learning-flashcards';
 const HOUR_MS = 1000 * 60 * 60;
@@ -147,6 +148,37 @@ const Flashcards = () => {
   const [showAnswer, setShowAnswer] = useState(false);
 
   useEffect(() => {
+    loadExistingFlashcards();
+  }, []);
+
+  const loadExistingFlashcards = async () => {
+    // Load from database first
+    try {
+      const response = await flashcardsAPI.getDecks();
+      const decks = response.data || response || [];
+      
+      if (Array.isArray(decks) && decks.length > 0) {
+        const allCards = [];
+        const allConcepts = [];
+        
+        decks.forEach(deck => {
+          if (deck.flashcards && Array.isArray(deck.flashcards)) {
+            allCards.push(...deck.flashcards);
+          }
+          if (deck.keyConcepts && Array.isArray(deck.keyConcepts)) {
+            allConcepts.push(...deck.keyConcepts);
+          }
+        });
+        
+        setFlashcards(allCards);
+        setKeyConcepts([...new Set(allConcepts)]); // Remove duplicates
+        return; // Successfully loaded from database
+      }
+    } catch (err) {
+      console.log('No flashcard decks found in database, checking localStorage');
+    }
+
+    // Fallback to localStorage
     if (typeof window === 'undefined') return;
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -158,7 +190,7 @@ const Flashcards = () => {
     } catch (err) {
       console.error('Failed to restore flashcards', err);
     }
-  }, []);
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -250,6 +282,24 @@ Content:\n${sourceText.trim()}`,
 
       const cards = parsed.flashcards.map((card, index) => createCardModel(card, index, sourceTitle.trim()));
       const newConcepts = Array.isArray(parsed.keyConcepts) ? parsed.keyConcepts.filter(Boolean) : [];
+
+      // Save deck to database
+      try {
+        const deckData = {
+          title: sourceTitle.trim() || 'Untitled Deck',
+          description: `Generated from ${sourceTitle || 'content'} - ${cards.length} cards`,
+          sourceTitle: sourceTitle.trim(),
+          keyConcepts: newConcepts,
+          flashcards: cards,
+          createdAt: new Date().toISOString()
+        };
+        
+        const savedDeck = await flashcardsAPI.createDeck(deckData);
+        console.log('Flashcard deck saved to database:', savedDeck);
+      } catch (saveErr) {
+        console.error('Failed to save flashcard deck to database:', saveErr);
+        // Continue anyway - user still sees the flashcards
+      }
 
       setFlashcards((prev) => [...cards, ...prev]);
       setKeyConcepts((prev) => {

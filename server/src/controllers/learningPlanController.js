@@ -1,5 +1,6 @@
 import aiService from '../services/aiService.js';
 import UserProfile from '../models/UserProfile.js';
+import LearningPlan from '../models/LearningPlan.js';
 
 // @desc    Create personalized learning plan using AI
 // @route   POST /api/learning/plan
@@ -83,14 +84,38 @@ export const createPlan = async (req, res, next) => {
     };
 
     // Call AI service to create learning plan
-    const plan = await aiService.createLearningPlan(profileJson);
+    const generatedPlan = await aiService.createLearningPlan(profileJson);
 
-    res.status(200).json({
+    // Save plan to database
+    const savedPlan = new LearningPlan({
+      userId: req.user.id,
+      title: generatedPlan.title || `${topic} Learning Plan`,
+      description: generatedPlan.description || `AI-generated learning plan for ${topic}`,
+      domain: topic,
+      duration: generatedPlan.duration || `${days} days`,
+      goals: goals,
+      plan: generatedPlan,
+      metadata: {
+        difficulty,
+        estimatedHours: days * (hoursPerDay || 2),
+        strengths,
+        weaknesses,
+        hoursPerDay
+      },
+      progress: {
+        totalDays: generatedPlan.days || days,
+        completedDays: [],
+        progressPercentage: 0
+      }
+    });
+
+    await savedPlan.save();
+
+    res.status(201).json({
       success: true,
       data: {
-        plan,
-        userId: req.user.id,
-        createdAt: new Date().toISOString()
+        learningPlan: savedPlan,
+        message: 'Learning plan generated and saved successfully'
       }
     });
   } catch (error) {
@@ -105,14 +130,29 @@ export const getSavedPlans = async (req, res, next) => {
   try {
     const { topic, page = 1, limit = 10 } = req.query;
 
-    // This would fetch saved learning plans from a database
-    // For now, return a placeholder response
+    // Build query
+    const query = { userId: req.user.id, isActive: true };
+    if (topic) {
+      query.domain = new RegExp(topic, 'i');
+    }
+
+    // Fetch saved learning plans from database
+    const plans = await LearningPlan.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .select('-__v');
+
+    const total = await LearningPlan.countDocuments(query);
+
     res.status(200).json({
       success: true,
-      data: {
-        message: 'Saved learning plans coming soon',
-        topic,
-        note: 'Will store and retrieve AI-generated learning plans'
+      data: plans,
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        count: plans.length,
+        totalRecords: total
       }
     });
   } catch (error) {
@@ -139,16 +179,40 @@ export const updatePlanProgress = async (req, res, next) => {
       });
     }
 
-    // This would update progress in a saved learning plan
-    // For now, return a placeholder response
+    // Find and update the learning plan
+    const plan = await LearningPlan.findOne({
+      _id: id,
+      userId: req.user.id
+    });
+
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Learning plan not found',
+          status: 404
+        }
+      });
+    }
+
+    // Update progress
+    if (completed) {
+      await plan.updateProgress(day);
+    } else {
+      // Remove day from completed if unchecking
+      plan.progress.completedDays = plan.progress.completedDays.filter(d => d !== day);
+      plan.progress.progressPercentage = Math.round(
+        (plan.progress.completedDays.length / plan.progress.totalDays) * 100
+      );
+      plan.progress.lastUpdated = new Date();
+      await plan.save();
+    }
+
     res.status(200).json({
       success: true,
       data: {
-        message: 'Learning plan progress update coming soon',
-        planId: id,
-        day,
-        completed,
-        note: 'Will track completion of daily tasks in learning plans'
+        plan,
+        message: 'Learning plan progress updated successfully'
       }
     });
   } catch (error) {

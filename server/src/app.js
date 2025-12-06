@@ -4,6 +4,7 @@ import authRoutes from './routes/authRoutes.js';
 import catalogRoutes from './routes/catalogRoutes.js';
 import learningPathRoutes from './routes/learningPathRoutes.js';
 import learningPlanRoutes from './routes/learningPlanRoutes.js';
+import flashcardRoutes from './routes/flashcardRoutes.js';
 import quizRoutes from './routes/quizRoutes.js';
 import analysisRoutes from './routes/analysisRoutes.js';
 import tutorRoutes from './routes/tutorRoutes.js';
@@ -42,6 +43,7 @@ app.use('/api/catalog', catalogRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/learning', learningPathRoutes);
 app.use('/api/learning', learningPlanRoutes); // Merged with learning path routes
+app.use('/api/learning/flashcards', flashcardRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/tutor', tutorRoutes);

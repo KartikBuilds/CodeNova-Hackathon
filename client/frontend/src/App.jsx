@@ -10,6 +10,7 @@ import ModuleDetail from './pages/ModuleDetail';
 import QuizPage from './pages/QuizPage';
 import DashboardPage from './pages/DashboardPage';
 import LearningPlanPage from './pages/LearningPlanPage';
+import AllLearningPlansPage from './pages/AllLearningPlansPage';
 import LearningPath from './pages/LearningPath';
 import Profile from './pages/Profile';
 import Flashcards from './pages/Flashcards';
@@ -68,6 +69,14 @@ function App() {
           />
           <Route 
             path="/plan" 
+            element={
+              <PrivateRoute>
+                <AllLearningPlansPage />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/plan/single" 
             element={
               <PrivateRoute>
                 <LearningPlanPage />

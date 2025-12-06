@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { learningPlanAPI } from '../api/learningPlanAPI';
+import { learningPlansAPI } from '../api/learningAPI';
 import { analysisAPI } from '../api/analysisAPI';
 import { profileAPI } from '../api/profileAPI';
 import Toast from '../components/Toast';
 import './LearningPlan.css';
 
 const LearningPlanPage = () => {
-  const [plan, setPlan] = useState(null);
+  const [plans, setPlans] = useState([]);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [view, setView] = useState('list'); // 'list' or 'detail' or 'create'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [showConfigForm, setShowConfigForm] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const [config, setConfig] = useState({
     topic: '',
@@ -30,29 +32,44 @@ const LearningPlanPage = () => {
   };
 
   useEffect(() => {
-    fetchOrGeneratePlan();
+    loadAllPlans();
   }, []);
 
-  const fetchOrGeneratePlan = async () => {
+  const loadAllPlans = async () => {
     setLoading(true);
     try {
-      // Try to get existing saved plans first
-      const savedPlans = await learningPlanAPI.getSavedPlans();
-      if (savedPlans && savedPlans.length > 0) {
-        // Get the most recent plan
-        setPlan(savedPlans[0]);
-        setError('');
-      } else {
-        // Show config form to generate new plan
-        setShowConfigForm(true);
-      }
+      const response = await learningPlansAPI.getPlans();
+      const savedPlans = response.data || response;
+      setPlans(Array.isArray(savedPlans) ? savedPlans : []);
+      setError('');
     } catch (err) {
-      console.error('Error fetching plan:', err);
-      // Show config form to generate new plan
-      setShowConfigForm(true);
+      console.error('Error fetching plans:', err);
+      setPlans([]);
+      setError('Failed to load learning plans');
     } finally {
       setLoading(false);
     }
+  };
+
+  const viewPlanDetails = (plan) => {
+    setSelectedPlan(plan);
+    setView('detail');
+  };
+
+  const backToList = () => {
+    setView('list');
+    setSelectedPlan(null);
+  };
+
+  const showCreateForm = () => {
+    setView('create');
+    setConfig({
+      topic: '',
+      days: 7,
+      hoursPerDay: 2,
+      difficulty: 'medium',
+      goals: ''
+    });
   };
 
   const handleConfigChange = (e) => {
@@ -110,10 +127,29 @@ const LearningPlanPage = () => {
       // Extract the actual plan from nested data structure
       const actualPlan = planData.plan || planData.data?.plan || planData;
       
+      // Save plan to database
+      try {
+        const savedPlan = await learningPlansAPI.createPlan({
+          title: actualPlan.title || `${profileTopic} Learning Plan`,
+          description: actualPlan.description || `${config.days}-day learning plan for ${profileTopic}`,
+          domain: profileTopic,
+          level: config.difficulty,
+          duration: config.days,
+          hoursPerDay: config.hoursPerDay,
+          goals: config.goals ? [config.goals] : [`Master ${profileTopic}`],
+          plan: actualPlan,
+          createdAt: new Date().toISOString()
+        });
+        console.log('Plan saved to database:', savedPlan);
+      } catch (saveErr) {
+        console.error('Failed to save plan to database:', saveErr);
+        // Continue anyway - user still sees the plan
+      }
+      
       setPlan(actualPlan);
       setShowConfigForm(false);
       setError('');
-      showToast('Learning plan generated successfully!', 'success');
+      showToast('Learning plan generated and saved successfully!', 'success');
     } catch (err) {
       console.error('Error generating plan:', err);
       setError(err.response?.data?.error?.message || 'Failed to generate learning plan');

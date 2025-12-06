@@ -294,9 +294,31 @@ Generate {days} days of structured learning. Output valid JSON only.
       }
       
       // Try to find JSON object in the response
-      const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        jsonString = jsonMatch[0];
+      const jsonStart = jsonString.indexOf('{');
+      const jsonEnd = jsonString.lastIndexOf('}');
+      
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        jsonString = jsonString.substring(jsonStart, jsonEnd + 1);
+      }
+      
+      // Try to fix common JSON issues
+      jsonString = jsonString
+        .replace(/,\s*}/g, '}') // Remove trailing commas
+        .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+        .replace(/"\s*\n\s*"/g, '" "'); // Fix line breaks in strings
+      
+      // If JSON seems incomplete, try to complete it
+      const openBraces = (jsonString.match(/{/g) || []).length;
+      const closeBraces = (jsonString.match(/}/g) || []).length;
+      const openBrackets = (jsonString.match(/\[/g) || []).length;
+      const closeBrackets = (jsonString.match(/]/g) || []).length;
+      
+      // Add missing closing braces/brackets
+      for (let i = 0; i < (openBraces - closeBraces); i++) {
+        jsonString += '}';
+      }
+      for (let i = 0; i < (openBrackets - closeBrackets); i++) {
+        jsonString += ']';
       }
       
       planData = JSON.parse(jsonString);
@@ -306,13 +328,46 @@ Generate {days} days of structured learning. Output valid JSON only.
       return createLearningPlanMock(profileJson);
     }
 
-    // Validate structure
-    if (!planData.plan || !Array.isArray(planData.plan)) {
-      throw new Error('Invalid learning plan structure');
+    // Normalize the plan structure - handle different possible formats
+    let normalizedPlan = planData;
+    
+    // If the plan is directly in the response, wrap it properly
+    if (Array.isArray(planData)) {
+      normalizedPlan = {
+        domain: profileJson.topic || 'Learning Plan',
+        totalDays: planData.length,
+        estimatedHoursPerDay: profileJson.studyTimePerDay / 60 || 2,
+        plan: planData.map((day, index) => ({
+          day: day.day || index + 1,
+          topic: day.topics ? day.topics[0] : day.topic || `Day ${index + 1}`,
+          description: day.description || '',
+          tasks: day.tasks || [],
+          notes: day.notes || '',
+          resources: day.resources || []
+        }))
+      };
+    }
+    
+    // If plan is in planData.plan, keep as is but ensure proper structure
+    if (planData.plan && Array.isArray(planData.plan)) {
+      normalizedPlan.plan = planData.plan.map((day, index) => ({
+        day: day.day || index + 1,
+        topic: day.topics ? day.topics[0] : day.topic || day.title || `Day ${index + 1}`,
+        description: day.description || '',
+        tasks: day.tasks || day.activities || [],
+        notes: day.notes || '',
+        resources: day.resources || []
+      }));
+    }
+    
+    // Ensure we have a valid plan structure
+    if (!normalizedPlan.plan || !Array.isArray(normalizedPlan.plan) || normalizedPlan.plan.length === 0) {
+      console.error('Invalid or empty plan structure, using fallback');
+      return createLearningPlanMock(profileJson);
     }
 
     return {
-      ...planData,
+      ...normalizedPlan,
       createdAt: new Date().toISOString(),
       source: 'groq-ai'
     };
