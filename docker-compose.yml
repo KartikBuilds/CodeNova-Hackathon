@@ -1,24 +1,10 @@
 version: '3.8'
 
 services:
-  # Client - React App
-  client:
+  # Monorepo Build
+  app:
     build:
-      context: ./apps/client
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:5000/api
-    depends_on:
-      - server
-    networks:
-      - app-network
-
-  # Server - Node.js API
-  server:
-    build:
-      context: ./apps/server
+      context: .
       dockerfile: Dockerfile
     ports:
       - "5000:5000"
@@ -30,7 +16,7 @@ services:
     depends_on:
       - mongodb
     volumes:
-      - ./apps/server/uploads:/app/uploads
+      - ./server/uploads:/app/server/uploads
     networks:
       - app-network
 
