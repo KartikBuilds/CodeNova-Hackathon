@@ -9,13 +9,16 @@ app.use(express.json());
 
 connectDB();
 
+// ROUTES
 app.use("/api/quiz", require("./routes/quizRoutes"));
 app.use("/api/learning", require("./routes/learningRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/analytics", require("./routes/analyticsRoutes"));
 
-app.get("/api/health", (req, res) => res.json({ status: "OK" }));
+app.get("/api/health", (req, res) => {
+  res.json({ status: "OK" });
+});
 
-app.listen(process.env.PORT, () => {
+app.listen(process.env.PORT || 5000, () => {
   console.log(`Server running on port ${process.env.PORT}`);
 });
