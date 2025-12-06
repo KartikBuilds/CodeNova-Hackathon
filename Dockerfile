@@ -57,8 +57,5 @@ EXPOSE 5000
 # Production env
 ENV NODE_ENV=production
 
-# Set working directory to server for execution
-WORKDIR /app/server
-
-# Start the backend directly (or use workspace command)
-CMD ["node", "src/server.js"]
+# Start the backend server
+CMD ["node", "server/src/server.js"]

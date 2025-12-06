@@ -10,7 +10,6 @@ builder = "NIXPACKS"
 
 [deploy]
 # Primary service (backend server)
-# Use direct node command since workspaces aren't available in production Docker
 startCommand = "node server/src/server.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
