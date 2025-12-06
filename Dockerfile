@@ -29,23 +29,27 @@ RUN npm run build --workspace=apps/client/frontend
 # ============================
 FROM node:20-alpine
 
-# Runtime directory is server — important for Railway
-WORKDIR /app/server
+# Keep monorepo structure intact
+WORKDIR /app
+
+# Copy root package files for monorepo structure
+COPY package.json package-lock.json* ./
 
 # Copy server package files
-COPY server/package.json server/package-lock.json* ./
+COPY server/package.json ./server/
+COPY server/package-lock.json* ./server/
 
-# Install only server production dependencies
-RUN npm install --omit=dev
+# Install only server production dependencies (monorepo-aware)
+RUN npm install --omit=dev --workspace=server
 
-# Copy server source
-COPY --from=builder /app/server/src ./src
+# Copy server source code
+COPY --from=builder /app/server/src ./server/src
 
 # Copy built client (if server serves it)
-COPY --from=builder /app/apps/client/frontend/dist ../apps/client/frontend/dist
+COPY --from=builder /app/apps/client/frontend/dist ./apps/client/frontend/dist
 
 # Ensure uploads folder exists
-RUN mkdir -p uploads
+RUN mkdir -p /app/server/uploads
 
 # Expose API port
 EXPOSE 5000
@@ -53,5 +57,8 @@ EXPOSE 5000
 # Production env
 ENV NODE_ENV=production
 
-# Start the backend (no workspace flags needed)
-CMD ["npm", "start"]
+# Set working directory to server for execution
+WORKDIR /app/server
+
+# Start the backend directly (or use workspace command)
+CMD ["node", "src/server.js"]
