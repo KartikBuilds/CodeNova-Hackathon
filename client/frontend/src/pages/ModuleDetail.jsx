@@ -68,7 +68,7 @@ const ModuleDetail = () => {
       <div className="module-detail-container">
         <div className="error-container">
           <p>{error}</p>
-          <Link to="/catalog" className="back-link">← Back to Catalog</Link>
+          <Link to="/catalog" className="back-link">← Back to Catalogue</Link>
         </div>
       </div>
     );
@@ -79,7 +79,7 @@ const ModuleDetail = () => {
       <div className="module-detail-container">
         <div className="error-container">
           <p>Module not found</p>
-          <Link to="/catalog" className="back-link">← Back to Catalog</Link>
+          <Link to="/catalog" className="back-link">← Back to Catalogue</Link>
         </div>
       </div>
     );
@@ -93,7 +93,7 @@ const ModuleDetail = () => {
             ← Back to Course
           </Link>
         ) : (
-          <Link to="/catalog" className="back-link">← Back to Catalog</Link>
+          <Link to="/catalog" className="back-link">← Back to Catalogue</Link>
         )}
 
         <h1>{module.title || module.name}</h1>

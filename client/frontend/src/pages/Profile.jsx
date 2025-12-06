@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../context/ProfileContext';
 import { api } from '../api/apiClient';
 import Toast from '../components/Toast';
+import ProfileImageSelector from '../components/ProfileImageSelector';
 
 const Profile = () => {
   const [formData, setFormData] = useState({
@@ -21,6 +23,7 @@ const Profile = () => {
   const [goalInput, setGoalInput] = useState('');
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [showAssetImages, setShowAssetImages] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
@@ -29,6 +32,7 @@ const Profile = () => {
   
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile, updateProfile: updateProfileContext, fetchProfile: refetchProfile } = useProfile();
 
   const domains = [
     'Web Development', 'Data Science', 'Machine Learning',
@@ -50,50 +54,45 @@ const Profile = () => {
   ];
 
   useEffect(() => {
-    fetchProfile();
-  }, [user]);
-
-  const fetchProfile = async () => {
-    try {
-      const response = await api.get('/profile');
-      const profileData = response.data?.data || response.data;
-      
-      if (profileData) {
-        setFormData({
-          bio: profileData.bio || '',
-          interests: profileData.interests || [],
-          learningGoals: profileData.learningGoals || [],
-          primaryDomain: profileData.primaryDomain || '',
-          level: profileData.level || '',
-          preferences: {
-            learningStyle: profileData.preferences?.learningStyle || '',
-            studyTimePerDay: profileData.preferences?.studyTimePerDay || 0,
-            notificationsEnabled: profileData.preferences?.notificationsEnabled ?? true
-          }
-        });
-        if (profileData.profileImage) setImagePreview(profileData.profileImage);
-        setHasProfile(true);
-        setIsEditing(false);
-      }
-    } catch (err) {
-      console.log('No existing profile found');
+    if (profile) {
+      setFormData({
+        bio: profile.bio || '',
+        interests: profile.interests || [],
+        learningGoals: profile.learningGoals || [],
+        primaryDomain: profile.primaryDomain || '',
+        level: profile.level || '',
+        preferences: {
+          learningStyle: profile.preferences?.learningStyle || '',
+          studyTimePerDay: profile.preferences?.studyTimePerDay || 0,
+          notificationsEnabled: profile.preferences?.notificationsEnabled ?? true
+        }
+      });
+      if (profile.profileImage) setImagePreview(profile.profileImage);
+      setHasProfile(true);
+      setIsEditing(false);
+    } else {
       setIsEditing(true);
       setHasProfile(false);
     }
+  }, [profile]);
+
+  // Image handling functions
+  const handleImageUpload = (imageData) => {
+    setImagePreview(imageData);
+    setError(''); // Clear any previous errors
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image size should be less than 5MB');
-        return;
-      }
-      setProfileImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
-    }
+  const handleImageSelect = (imageUrl) => {
+    setImagePreview(imageUrl);
+    setError(''); // Clear any previous errors
+  };
+
+  const toggleAssetImages = () => {
+    setShowAssetImages(!showAssetImages);
+  };
+
+  const getDefaultAvatar = () => {
+    return user?.name?.charAt(0).toUpperCase() || 'U';
   };
 
   const addInterest = () => {
@@ -130,7 +129,7 @@ const Profile = () => {
 
     try {
       const profileData = { ...formData, profileImage: imagePreview };
-      await api.put('/profile', profileData);
+      await updateProfileContext(profileData);
 
       if (formData.primaryDomain && formData.level) {
         try { await api.post('/learning/path/rebuild'); } catch (err) { console.error('Failed to rebuild learning path:', err); }
@@ -139,7 +138,7 @@ const Profile = () => {
       showToast('Profile updated successfully!', 'success');
       setHasProfile(true);
       setIsEditing(false);
-      await fetchProfile();
+      await refetchProfile();
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Failed to update profile. Please try again.';
       setError(errorMsg);
@@ -218,7 +217,7 @@ const Profile = () => {
                   {imagePreview ? (
                     <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-4xl font-bold text-white">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
+                    <span className="text-4xl font-bold text-white">{getDefaultAvatar()}</span>
                   )}
                 </div>
                 <div className="text-center sm:text-left">
@@ -277,24 +276,16 @@ const Profile = () => {
         ) : (
           // Edit Mode
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Profile Picture */}
+            {/* Profile Picture Selector */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-              <div className="flex flex-col sm:flex-row items-center gap-6">
-                <div className="w-28 h-28 rounded-2xl overflow-hidden bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-4xl font-bold text-white">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="profileImage" className="inline-block px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-xl cursor-pointer hover:bg-indigo-700 transition-colors">
-                    Choose Photo
-                  </label>
-                  <input type="file" id="profileImage" accept="image/*" onChange={handleImageChange} className="hidden" />
-                  <p className="text-sm text-slate-500 mt-2">Max size: 5MB</p>
-                </div>
-              </div>
+              <ProfileImageSelector
+                currentImage={imagePreview}
+                onImageSelect={handleImageSelect}
+                onImageUpload={handleImageUpload}
+                showAssetImages={showAssetImages}
+                onToggleAssetImages={toggleAssetImages}
+                defaultLetter={getDefaultAvatar()}
+              />
             </div>
 
             {/* Basic Info */}
