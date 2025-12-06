@@ -7,17 +7,34 @@ import Module from '../models/Module.js';
 // @access  Private
 export const getLearningPath = async (req, res, next) => {
   try {
-    const { domain } = req.query;
+    let { domain } = req.query;
 
-    // Validate domain parameter
+    // If no domain provided, try to get from user profile
     if (!domain) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Domain query parameter is required',
-          status: 400
+      try {
+        const UserProfile = (await import('../models/UserProfile.js')).default;
+        const userProfile = await UserProfile.findOne({ userId: req.user.id });
+        
+        if (userProfile && userProfile.primaryDomain) {
+          domain = userProfile.primaryDomain;
+        } else {
+          return res.status(200).json({
+            success: true,
+            data: {
+              learningPath: null,
+              message: 'No primary domain set in profile. Please set your primary domain first or specify domain parameter.'
+            }
+          });
         }
-      });
+      } catch (profileError) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Domain query parameter is required when no primary domain is set',
+            status: 400
+          }
+        });
+      }
     }
 
     // Find user's learning path for the domain
