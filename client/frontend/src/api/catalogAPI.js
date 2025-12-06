@@ -10,18 +10,23 @@ export const catalogAPI = {
     return response.data.data || response.data;
   },
 
-  // Get courses by domain
-  getCourses: async (domain) => {
+  // Get courses by domain with pagination
+  getCourses: async (domain, params = {}) => {
+    const queryParams = { domain, ...params };
     const response = await api.get('/catalog/courses', {
-      params: { domain },
+      params: queryParams,
     });
-    return response.data.data || response.data;
+    // Return full response to preserve pagination metadata
+    return response.data;
   },
 
-  // Get all courses (no domain filter)
-  getAllCourses: async () => {
-    const response = await api.get('/catalog/courses');
-    return response.data.data || response.data;
+  // Get all courses (no domain filter) with pagination
+  getAllCourses: async (params = {}) => {
+    const response = await api.get('/catalog/courses', {
+      params,
+    });
+    // Return full response to preserve pagination metadata
+    return response.data;
   },
 
   // Get course details by ID

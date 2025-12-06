@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../context/ProfileContext';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { profileImage, getDefaultAvatar } = useProfile();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [learningDropdownOpen, setLearningDropdownOpen] = useState(false);
@@ -109,7 +111,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-1">
             {isAuthenticated ? (
               <>
-                <NavLink to="/catalog">Catalog</NavLink>
+                <NavLink to="/catalog">Catalogue</NavLink>
                 <NavLink to="/dashboard">Dashboard</NavLink>
                 
                 {/* Learning Dropdown */}
@@ -152,10 +154,14 @@ const Navbar = () => {
                           : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50 hover:scale-102'
                       }`}
                     >
-                      <div className={`w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs transition-all duration-300 ease-out ${
+                      <div className={`w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs transition-all duration-300 ease-out overflow-hidden ${
                         userDropdownOpen ? 'ring-2 ring-indigo-200 shadow-lg' : 'hover:shadow-md'
                       }`}>
-                        {user?.name?.charAt(0)?.toUpperCase()}
+                        {profileImage ? (
+                          <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <span>{getDefaultAvatar()}</span>
+                        )}
                       </div>
                       <span className="hidden lg:block transition-all duration-200">{user?.name}</span>
                       <svg className={`w-4 h-4 transition-all duration-300 ease-out ${userDropdownOpen ? 'rotate-180 text-indigo-600' : 'rotate-0'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -224,7 +230,7 @@ const Navbar = () => {
             <div className="flex flex-col gap-2">
               {isAuthenticated ? (
                 <>
-                  <Link to="/catalog" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Catalog</Link>
+                  <Link to="/catalog" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Catalogue</Link>
                   <Link to="/dashboard" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
                   <Link to="/path" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Learning Path</Link>
                   <Link to="/plan" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Learning Plan</Link>

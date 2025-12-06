@@ -624,7 +624,7 @@ const DashboardPage = () => {
           <h2 className="text-lg font-semibold text-slate-800 mb-4">⚡ Quick Actions</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { to: '/catalog', icon: '📚', title: 'Browse Catalog', desc: 'Explore available courses', color: 'from-blue-500 to-indigo-600' },
+              { to: '/catalog', icon: '📚', title: 'Browse Catalogue', desc: 'Explore available courses', color: 'from-blue-500 to-indigo-600' },
               { to: '/plan', icon: '🗓️', title: 'Learning Plan', desc: 'View your personalized plan', color: 'from-purple-500 to-pink-600' },
               { to: '/profile', icon: '👤', title: 'Update Profile', desc: 'Manage your preferences', color: 'from-emerald-500 to-teal-600' },
             ].map((action, index) => (

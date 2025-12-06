@@ -526,7 +526,7 @@ const LearningPlanPage = () => {
           Go to Dashboard
         </button>
         <button onClick={() => navigate('/catalog')} className="catalog-button">
-          Browse Catalog
+          Browse Catalogue
         </button>
       </div>
 
