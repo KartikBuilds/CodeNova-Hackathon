@@ -40,12 +40,12 @@ const Register = () => {
     try {
       const { confirmPassword, ...registerData } = formData;
       const response = await api.post('/auth/register', registerData);
-      const { token, user } = response.data;
+      const { token, user } = response.data.data;
       
       login(user, token);
       navigate('/catalog');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.error?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -7,7 +7,7 @@ export const catalogAPI = {
   // Get all available domains
   getDomains: async () => {
     const response = await api.get('/catalog/domains');
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Get courses by domain
@@ -15,25 +15,25 @@ export const catalogAPI = {
     const response = await api.get('/catalog/courses', {
       params: { domain },
     });
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Get all courses (no domain filter)
   getAllCourses: async () => {
     const response = await api.get('/catalog/courses');
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Get course details by ID
   getCourseById: async (courseId) => {
     const response = await api.get(`/catalog/course/${courseId}`);
-    return response.data;
+    return response.data.data || response.data;
   },
 
   // Get module details by ID
   getModuleById: async (moduleId) => {
     const response = await api.get(`/catalog/module/${moduleId}`);
-    return response.data;
+    return response.data.data || response.data;
   },
 };
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { learningPlanAPI } from '../api/profileAPI';
-import { analysisAPI } from '../api/quizAPI';
+import { learningPlanAPI } from '../api/learningPlanAPI';
+import { analysisAPI } from '../api/analysisAPI';
 import { profileAPI } from '../api/profileAPI';
 import Toast from '../components/Toast';
 import './LearningPlan.css';
@@ -28,10 +28,11 @@ const LearningPlanPage = () => {
   const fetchOrGeneratePlan = async () => {
     setLoading(true);
     try {
-      // Try to get existing plan first
-      const existingPlan = await learningPlanAPI.getCurrentPlan();
-      if (existingPlan && existingPlan.plan) {
-        setPlan(existingPlan.plan || existingPlan);
+      // Try to get existing saved plans first
+      const savedPlans = await learningPlanAPI.getSavedPlans();
+      if (savedPlans && savedPlans.length > 0) {
+        // Get the most recent plan
+        setPlan(savedPlans[0]);
         setError('');
       } else {
         // Generate new plan
@@ -72,15 +73,16 @@ const LearningPlanPage = () => {
         weaknesses = ['Advanced algorithms', 'System design'];
       }
 
-      // Generate plan
-      const planData = await learningPlanAPI.generatePlan({
+      // Generate plan using createPlan API
+      const planData = await learningPlanAPI.createPlan({
         topic,
         strengths,
         weaknesses,
-        duration: 7, // 7-day plan
+        difficulty: 'medium',
+        goals: `Master ${topic} in ${7} days`,
       });
 
-      setPlan(planData.plan || planData);
+      setPlan(planData);
       setError('');
       showToast('Learning plan generated successfully!', 'success');
     } catch (err) {
@@ -118,8 +120,8 @@ const LearningPlanPage = () => {
         setPlan(updatedPlan);
 
         // Update progress on server
-        await learningPlanAPI.updatePlanProgress({
-          dayIndex,
+        await learningPlanAPI.updateProgress({
+          day: dayIndex + 1,
           taskIndex,
           completed: !taskAlreadyCompleted,
         });

@@ -4,7 +4,7 @@ import { catalogAPI } from '../api/catalogAPI';
 import './CourseDetail.css';
 
 const CourseDetail = () => {
-  const { courseId } = useParams();
+  const { id } = useParams();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -13,7 +13,7 @@ const CourseDetail = () => {
     const fetchCourse = async () => {
       setLoading(true);
       try {
-        const data = await catalogAPI.getCourseById(courseId);
+        const data = await catalogAPI.getCourseById(id);
         setCourse(data.course || data);
         setError('');
       } catch (err) {
@@ -24,10 +24,10 @@ const CourseDetail = () => {
       }
     };
 
-    if (courseId) {
+    if (id) {
       fetchCourse();
     }
-  }, [courseId]);
+  }, [id]);
 
   if (loading) {
     return (

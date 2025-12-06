@@ -1,35 +1,89 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import Navbar from './components/Navbar';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Catalog from './pages/Catalog';
+import CourseDetail from './pages/CourseDetail';
+import ModuleDetail from './pages/ModuleDetail';
+import QuizPage from './pages/QuizPage';
+import DashboardPage from './pages/DashboardPage';
+import LearningPlanPage from './pages/LearningPlanPage';
+import Profile from './pages/Profile';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <AuthProvider>
+      <Router>
+        <Navbar />
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/" element={<Navigate to="/catalog" replace />} />
+          
+          {/* Public catalog route */}
+          <Route path="/catalog" element={<Catalog />} />
+          
+          {/* Protected routes */}
+          <Route 
+            path="/course/:id" 
+            element={
+              <PrivateRoute>
+                <CourseDetail />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/module/:id" 
+            element={
+              <PrivateRoute>
+                <ModuleDetail />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/quiz/:moduleId" 
+            element={
+              <PrivateRoute>
+                <QuizPage />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard" 
+            element={
+              <PrivateRoute>
+                <DashboardPage />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/plan" 
+            element={
+              <PrivateRoute>
+                <LearningPlanPage />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            } 
+          />
+          
+          {/* Catch all - redirect to catalog */}
+          <Route path="*" element={<Navigate to="/catalog" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
 }
 
-export default App
+export default App;
+

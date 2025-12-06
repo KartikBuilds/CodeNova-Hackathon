@@ -7,25 +7,25 @@ export const dashboardAPI = {
   // Get dashboard summary data
   getSummary: async () => {
     const response = await api.get('/dashboard/summary');
-    return response.data;
+    return response.data.data || response.data;
   },
 
-  // Get detailed analytics
-  getAnalytics: async () => {
-    const response = await api.get('/dashboard/analytics');
-    return response.data;
+  // Get activity timeline
+  getActivity: async (params) => {
+    const response = await api.get('/dashboard/activity', { params });
+    return response.data.data || response.data;
   },
 
-  // Get recent activity
-  getRecentActivity: async () => {
-    const response = await api.get('/dashboard/activity');
-    return response.data;
+  // Get topic breakdown
+  getTopics: async () => {
+    const response = await api.get('/dashboard/topics');
+    return response.data.data || response.data;
   },
 
-  // Get progress stats
-  getProgress: async () => {
-    const response = await api.get('/dashboard/progress');
-    return response.data;
+  // Get recommendations
+  getRecommendations: async () => {
+    const response = await api.get('/dashboard/recommendations');
+    return response.data.data || response.data;
   },
 };
 

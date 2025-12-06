@@ -4,7 +4,7 @@ import { catalogAPI } from '../api/catalogAPI';
 import './ModuleDetail.css';
 
 const ModuleDetail = () => {
-  const { moduleId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [module, setModule] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,7 +14,7 @@ const ModuleDetail = () => {
     const fetchModule = async () => {
       setLoading(true);
       try {
-        const data = await catalogAPI.getModuleById(moduleId);
+        const data = await catalogAPI.getModuleById(id);
         setModule(data.module || data);
         setError('');
       } catch (err) {
@@ -25,10 +25,10 @@ const ModuleDetail = () => {
       }
     };
 
-    if (moduleId) {
+    if (id) {
       fetchModule();
     }
-  }, [moduleId]);
+  }, [id]);
 
   const getYouTubeEmbedUrl = (url) => {
     // Extract video ID from various YouTube URL formats
@@ -46,10 +46,10 @@ const ModuleDetail = () => {
     // Pass module topic info as state to quiz page
     const state = {
       topic: module.topic || module.title || module.name,
-      moduleId: moduleId,
+      moduleId: id,
       moduleName: module.title || module.name,
     };
-    navigate(`/quiz/${moduleId}`, { state });
+    navigate(`/quiz/${id}`, { state });
   };
 
   if (loading) {

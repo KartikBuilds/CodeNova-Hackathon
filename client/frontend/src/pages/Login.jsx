@@ -30,12 +30,12 @@ const Login = () => {
 
     try {
       const response = await api.post('/auth/login', formData);
-      const { token, user } = response.data;
+      const { token, user } = response.data.data;
       
       login(user, token);
       navigate('/catalog');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(err.response?.data?.error?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
