@@ -4,12 +4,14 @@ FROM node:20-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy root package files
+# Copy root package files and lock files
 COPY package*.json ./
 
 # Copy workspace packages
 COPY server/package.json ./server/
+COPY server/package-lock.json* ./server/
 COPY apps/client/frontend/package.json ./apps/client/frontend/
+COPY apps/client/frontend/package-lock.json* ./apps/client/frontend/
 
 # Install dependencies for monorepo
 RUN npm ci
