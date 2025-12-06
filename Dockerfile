@@ -1,50 +1,34 @@
-# Multi-stage build for monorepo deployment
+# Multi-stage build for backend server deployment
 FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Copy root package files and lock files
-COPY package.json package-lock.json* ./
+# Copy backend package files
+COPY server/package.json server/package-lock.json* ./
 
-# Copy workspace packages
-COPY apps/client/frontend/package.json ./apps/client/frontend/
-COPY apps/client/frontend/package-lock.json* ./apps/client/frontend/
-COPY server/package.json ./server/
-COPY server/package-lock.json ./server/
-
-# Install dependencies for monorepo
+# Install dependencies
 RUN npm ci
 
-# Copy all source code
-COPY . .
-
-# Build all workspaces
-RUN npm run build --workspaces --if-present
+# Copy backend source code
+COPY server/src ./src
 
 # Production stage
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy root package files and lock files from builder
-COPY --from=builder /app/package.json /app/package-lock.json* ./
-
-# Copy workspace packages from builder
-COPY --from=builder /app/apps/client/frontend/package.json ./apps/client/frontend/
-COPY --from=builder /app/apps/client/frontend/package-lock.json* ./apps/client/frontend/
-COPY --from=builder /app/server/package.json ./server/
-COPY --from=builder /app/server/package-lock.json* ./server/
+# Copy package files from builder
+COPY server/package.json server/package-lock.json* ./
 
 # Install production dependencies only
 RUN npm ci --omit=dev
 
-# Copy built applications from builder
-COPY --from=builder /app/server/src ./server/src
-COPY --from=builder /app/apps/client/frontend/dist ./apps/client/frontend/dist
+# Copy source code from builder
+COPY --from=builder /app/src ./src
 
-# Create uploads directory for server
-RUN mkdir -p server/uploads
+# Create uploads directory
+RUN mkdir -p uploads
 
 # Expose port
 EXPOSE 5000
@@ -53,4 +37,4 @@ EXPOSE 5000
 ENV NODE_ENV=production
 
 # Start server
-CMD ["npm", "run", "start", "--workspace=server"]
+CMD ["npm", "start"]
