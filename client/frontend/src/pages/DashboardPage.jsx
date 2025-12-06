@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { dashboardAPI } from '../api/dashboardAPI';
 import { useAuth } from '../context/AuthContext';
-import './Dashboard.css';
 
 const DashboardPage = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -51,12 +50,13 @@ const DashboardPage = () => {
     }
   };
 
+  // Loading State
   if (loading) {
     return (
-      <div className="dashboard-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading dashboard...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600 font-medium">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -73,232 +73,263 @@ const DashboardPage = () => {
     total_learning_time = 0,
   } = dashboardData || {};
 
-  return (
-    <div className="dashboard-container">
-      {/* Header */}
-      <div className="dashboard-header">
+  // KPI Card Component
+  const KPICard = ({ icon, value, label, gradient }) => (
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 group">
+      <div className="flex items-center gap-4">
+        <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${gradient} group-hover:scale-110 transition-transform`}>
+          {icon}
+        </div>
         <div>
-          <h1>Welcome back, {user?.name || 'Learner'}! 👋</h1>
-          <p>Here's your learning progress overview</p>
-        </div>
-        <div className="header-actions">
-          <Link to="/catalog" className="action-button primary">
-            Browse Courses
-          </Link>
-          <Link to="/plan" className="action-button secondary">
-            Learning Plan
-          </Link>
+          <div className="text-2xl font-bold text-slate-800">{value}</div>
+          <div className="text-sm text-slate-500">{label}</div>
         </div>
       </div>
+    </div>
+  );
 
-      {/* KPI Cards */}
-      <div className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-icon" style={{ background: '#dbeafe' }}>
-            📝
-          </div>
-          <div className="kpi-content">
-            <div className="kpi-value">{total_quizzes}</div>
-            <div className="kpi-label">Quizzes Taken</div>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon" style={{ background: '#dcfce7' }}>
-            🎯
-          </div>
-          <div className="kpi-content">
-            <div className="kpi-value">{avg_score.toFixed(1)}%</div>
-            <div className="kpi-label">Average Score</div>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon" style={{ background: '#fef3c7' }}>
-            🔥
-          </div>
-          <div className="kpi-content">
-            <div className="kpi-value">{learning_streak}</div>
-            <div className="kpi-label">Day Streak</div>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon" style={{ background: '#f3e8ff' }}>
-            ⏱️
-          </div>
-          <div className="kpi-content">
-            <div className="kpi-value">{total_learning_time}h</div>
-            <div className="kpi-label">Learning Time</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="charts-grid">
-        {/* Score History Chart */}
-        {score_history.length > 0 && (
-          <div className="chart-card">
-            <h2>Score History</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={score_history}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={(value) => {
-                    const date = new Date(value);
-                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                  }}
-                />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'white', 
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    padding: '12px'
-                  }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="#667eea" 
-                  strokeWidth={3}
-                  dot={{ fill: '#667eea', r: 5 }}
-                  activeDot={{ r: 7 }}
-                  name="Score (%)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* Performance Bar Chart */}
-        {score_history.length > 0 && (
-          <div className="chart-card">
-            <h2>Quiz Performance</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={score_history}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="quiz" 
-                  tick={{ fontSize: 12 }}
-                />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    background: 'white', 
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    padding: '12px'
-                  }}
-                />
-                <Legend />
-                <Bar 
-                  dataKey="score" 
-                  fill="url(#colorGradient)" 
-                  name="Score (%)"
-                  radius={[8, 8, 0, 0]}
-                />
-                <defs>
-                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#667eea" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#764ba2" stopOpacity={1} />
-                  </linearGradient>
-                </defs>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
-
-      {/* Topics Section */}
-      <div className="topics-grid">
-        {/* Mastered Topics */}
-        <div className="topics-card mastered">
-          <h2>💪 Topics Mastered</h2>
-          {topics_mastered.length > 0 ? (
-            <div className="topics-badges">
-              {topics_mastered.map((topic, index) => (
-                <span key={index} className="topic-badge success">
-                  {topic}
-                </span>
-              ))}
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="animate-fadeIn">
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                Welcome back, {user?.name || 'Learner'}! 👋
+              </h1>
+              <p className="text-indigo-100">Here's your learning progress overview</p>
             </div>
-          ) : (
-            <p className="empty-state">Complete quizzes to master topics!</p>
+            <div className="flex flex-wrap gap-3">
+              <Link 
+                to="/catalog" 
+                className="px-5 py-2.5 bg-white text-indigo-600 font-semibold rounded-xl hover:shadow-lg hover:shadow-white/20 transform hover:-translate-y-0.5 transition-all"
+              >
+                Browse Courses
+              </Link>
+              <Link 
+                to="/plan" 
+                className="px-5 py-2.5 bg-white/10 backdrop-blur text-white font-semibold rounded-xl border border-white/20 hover:bg-white/20 transition-all"
+              >
+                Learning Plan
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 -mt-16 mb-8">
+          <KPICard 
+            icon="📝" 
+            value={total_quizzes} 
+            label="Quizzes Taken" 
+            gradient="bg-blue-100 text-blue-600"
+          />
+          <KPICard 
+            icon="🎯" 
+            value={`${avg_score.toFixed(1)}%`} 
+            label="Average Score" 
+            gradient="bg-green-100 text-green-600"
+          />
+          <KPICard 
+            icon="🔥" 
+            value={learning_streak} 
+            label="Day Streak" 
+            gradient="bg-orange-100 text-orange-600"
+          />
+          <KPICard 
+            icon="⏱️" 
+            value={`${total_learning_time}h`} 
+            label="Learning Time" 
+            gradient="bg-purple-100 text-purple-600"
+          />
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Score History */}
+          {score_history.length > 0 && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">📈 Score History</h2>
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={score_history}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getMonth() + 1}/${date.getDate()}`;
+                    }}
+                  />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'white', 
+                      border: 'none',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                      padding: '12px 16px'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="score" 
+                    stroke="url(#lineGradient)" 
+                    strokeWidth={3}
+                    dot={{ fill: '#667eea', strokeWidth: 0, r: 5 }}
+                    activeDot={{ r: 7, fill: '#764ba2' }}
+                    name="Score (%)"
+                  />
+                  <defs>
+                    <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#667eea" />
+                      <stop offset="100%" stopColor="#764ba2" />
+                    </linearGradient>
+                  </defs>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Quiz Performance */}
+          {score_history.length > 0 && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4">📊 Quiz Performance</h2>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={score_history}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="quiz" tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: '#64748b' }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'white', 
+                      border: 'none',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                      padding: '12px 16px'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="score" 
+                    fill="url(#barGradient)" 
+                    name="Score (%)"
+                    radius={[8, 8, 0, 0]}
+                  />
+                  <defs>
+                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#667eea" />
+                      <stop offset="100%" stopColor="#764ba2" />
+                    </linearGradient>
+                  </defs>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           )}
         </div>
 
-        {/* Weak Topics */}
-        <div className="topics-card weak">
-          <h2>📚 Areas for Improvement</h2>
-          {weak_topics.length > 0 ? (
-            <div className="topics-badges">
-              {weak_topics.map((topic, index) => (
-                <span key={index} className="topic-badge warning">
-                  {topic}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="empty-state">Great job! No weak areas detected.</p>
-          )}
-        </div>
-      </div>
+        {/* Topics Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Mastered Topics */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <span className="text-2xl">💪</span> Topics Mastered
+            </h2>
+            {topics_mastered.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {topics_mastered.map((topic, index) => (
+                  <span 
+                    key={index} 
+                    className="px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium border border-green-200"
+                  >
+                    {topic}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500 text-center py-8">Complete quizzes to master topics!</p>
+            )}
+          </div>
 
-      {/* Recent Activity */}
-      {recent_activity && recent_activity.length > 0 && (
-        <div className="activity-card">
-          <h2>Recent Activity</h2>
-          <div className="activity-list">
-            {recent_activity.map((activity, index) => (
-              <div key={index} className="activity-item">
-                <div className="activity-icon">
-                  {activity.type === 'quiz' ? '📝' : '📚'}
-                </div>
-                <div className="activity-content">
-                  <div className="activity-title">{activity.title}</div>
-                  <div className="activity-meta">
-                    {activity.date && (
-                      <span className="activity-date">
-                        {new Date(activity.date).toLocaleDateString()}
-                      </span>
-                    )}
-                    {activity.score !== undefined && (
-                      <span className="activity-score">Score: {activity.score}%</span>
-                    )}
+          {/* Weak Topics */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <span className="text-2xl">📚</span> Areas for Improvement
+            </h2>
+            {weak_topics.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {weak_topics.map((topic, index) => (
+                  <span 
+                    key={index} 
+                    className="px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-sm font-medium border border-amber-200"
+                  >
+                    {topic}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500 text-center py-8">Great job! No weak areas detected.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        {recent_activity && recent_activity.length > 0 && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-8">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Activity</h2>
+            <div className="space-y-3">
+              {recent_activity.map((activity, index) => (
+                <div 
+                  key={index} 
+                  className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-sm">
+                    {activity.type === 'quiz' ? '📝' : '📚'}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-slate-800">{activity.title}</div>
+                    <div className="flex items-center gap-3 text-sm text-slate-500">
+                      {activity.date && (
+                        <span>{new Date(activity.date).toLocaleDateString()}</span>
+                      )}
+                      {activity.score !== undefined && (
+                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full font-medium">
+                          {activity.score}%
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">⚡ Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { to: '/catalog', icon: '📚', title: 'Browse Catalog', desc: 'Explore available courses', color: 'from-blue-500 to-indigo-600' },
+              { to: '/plan', icon: '🗓️', title: 'Learning Plan', desc: 'View your personalized plan', color: 'from-purple-500 to-pink-600' },
+              { to: '/profile', icon: '👤', title: 'Update Profile', desc: 'Manage your preferences', color: 'from-emerald-500 to-teal-600' },
+            ].map((action, index) => (
+              <Link 
+                key={index}
+                to={action.to} 
+                className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${action.color} flex items-center justify-center text-2xl text-white mb-4 group-hover:scale-110 transition-transform`}>
+                  {action.icon}
+                </div>
+                <div className="font-semibold text-slate-800 mb-1">{action.title}</div>
+                <div className="text-sm text-slate-500">{action.desc}</div>
+              </Link>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <h2>Quick Actions</h2>
-        <div className="actions-grid">
-          <Link to="/catalog" className="action-card">
-            <div className="action-icon">📚</div>
-            <div className="action-title">Browse Catalog</div>
-            <div className="action-description">Explore available courses</div>
-          </Link>
-
-          <Link to="/plan" className="action-card">
-            <div className="action-icon">🗓️</div>
-            <div className="action-title">Learning Plan</div>
-            <div className="action-description">View your personalized plan</div>
-          </Link>
-
-          <Link to="/profile" className="action-card">
-            <div className="action-icon">👤</div>
-            <div className="action-title">Update Profile</div>
-            <div className="action-description">Manage your preferences</div>
-          </Link>
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@ import LearningPath from './pages/LearningPath';
 import Profile from './pages/Profile';
 import TutorChat from './components/TutorChat';
 import FloatingTutor from './components/FloatingTutor';
+import DocumentRAG from './components/DocumentRAG';
 import './App.css';
 
 function App() {
@@ -93,6 +94,14 @@ function App() {
             element={
               <PrivateRoute>
                 <TutorChat />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/rag" 
+            element={
+              <PrivateRoute>
+                <DocumentRAG />
               </PrivateRoute>
             } 
           />
