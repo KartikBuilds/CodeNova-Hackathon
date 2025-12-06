@@ -1,0 +1,30 @@
+{
+  "monorepo": {
+    "type": "npm-workspaces",
+    "packageManager": "npm",
+    "rootPath": "/Users/kartik/Developer/Hackathon/CodeNova-Hackathon",
+    "appsCount": 2
+  },
+  "apps": [
+    {
+      "path": "apps/client/frontend",
+      "name": "frontend",
+      "type": "frontend",
+      "port": "3000",
+      "buildCommand": "vite build",
+      "startCommand": "vite",
+      "hasDatabase": false,
+      "hasAuth": false
+    },
+    {
+      "path": "server",
+      "name": "server",
+      "type": "backend",
+      "port": "5000",
+      "buildCommand": "",
+      "startCommand": "node src/server.js",
+      "hasDatabase": true,
+      "hasAuth": true
+    }
+  ]
+}
