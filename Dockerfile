@@ -5,7 +5,7 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy root package files
+# Copy root package files (monorepo)
 COPY package.json package-lock.json* ./
 
 # Copy workspace package files
@@ -14,33 +14,34 @@ COPY server/package-lock.json* ./server/
 COPY apps/client/frontend/package.json ./apps/client/frontend/
 COPY apps/client/frontend/package-lock.json* ./apps/client/frontend/
 
-# Install root deps (for workspace scripts)
+# Install deps for monorepo
 RUN npm install
 
-# Copy entire monorepo
+# Copy all source code
 COPY . .
 
 # Build client
 RUN npm run build --workspace=apps/client/frontend
 
+
 # ============================
-# 2. Production Stage
+# 2. Production Runtime Stage
 # ============================
 FROM node:20-alpine
 
-# Runtime directory is server (important for Railway env vars)
+# Runtime directory is server — important for Railway
 WORKDIR /app/server
 
 # Copy server package files
 COPY server/package.json server/package-lock.json* ./
 
-# Install server dependencies using npm install
+# Install only server production dependencies
 RUN npm install --omit=dev
 
-# Copy server source code
+# Copy server source
 COPY --from=builder /app/server/src ./src
 
-# Copy built client (dist) into server if server needs to serve it
+# Copy built client (if server serves it)
 COPY --from=builder /app/apps/client/frontend/dist ../apps/client/frontend/dist
 
 # Ensure uploads folder exists
@@ -49,8 +50,8 @@ RUN mkdir -p uploads
 # Expose API port
 EXPOSE 5000
 
-# Environment
+# Production env
 ENV NODE_ENV=production
 
-# Start server
+# Start the backend (no workspace flags needed)
 CMD ["npm", "start"]
