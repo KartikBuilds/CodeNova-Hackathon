@@ -6,7 +6,7 @@ import UserProfile from '../models/UserProfile.js';
 // @access  Private
 export const createPlan = async (req, res, next) => {
   try {
-    const { topic, strengths = [], weaknesses = [], difficulty, goals = [], days = 7 } = req.body;
+    const { topic, strengths = [], weaknesses = [], difficulty, goals = [], days = 7, hoursPerDay } = req.body;
 
     // Validate required fields
     if (!topic) {
@@ -78,7 +78,7 @@ export const createPlan = async (req, res, next) => {
       weaknesses,
       goals,
       days: parseInt(days),
-      studyTimePerDay: userProfile?.preferences?.studyTimePerDay || 30,
+      studyTimePerDay: hoursPerDay ? parseFloat(hoursPerDay) * 60 : (userProfile?.preferences?.studyTimePerDay || 30),
       learningStyle: userProfile?.preferences?.learningStyle || 'visual'
     };
 

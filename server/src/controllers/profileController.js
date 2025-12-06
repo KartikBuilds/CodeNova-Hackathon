@@ -18,6 +18,7 @@ export const getProfile = async (req, res) => {
         primaryDomain: '',
         level: '',
         goals: '',
+        profileImage: '',
         bio: '',
         interests: [],
         learningGoals: [],
@@ -81,6 +82,7 @@ export const updateProfile = async (req, res) => {
       if (updateData.goals !== undefined) profile.goals = updateData.goals;
       
       // Update other fields
+      if (updateData.profileImage !== undefined) profile.profileImage = updateData.profileImage;
       if (updateData.bio !== undefined) profile.bio = updateData.bio;
       if (updateData.interests !== undefined) profile.interests = updateData.interests;
       if (updateData.learningGoals !== undefined) profile.learningGoals = updateData.learningGoals;

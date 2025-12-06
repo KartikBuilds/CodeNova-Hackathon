@@ -27,8 +27,14 @@ const Navbar = () => {
               <Link to="/dashboard" className="navbar-link">
                 Dashboard
               </Link>
+              <Link to="/path" className="navbar-link">
+                Learning Path
+              </Link>
               <Link to="/plan" className="navbar-link">
                 Learning Plan
+              </Link>
+              <Link to="/tutor" className="navbar-link">
+                AI Tutor
               </Link>
               <Link to="/profile" className="navbar-link">
                 Profile

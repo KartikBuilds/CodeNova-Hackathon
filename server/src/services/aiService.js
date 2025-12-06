@@ -247,7 +247,9 @@ Profile:
 - Learning Style: {learningStyle}
 {weaknessContext}
 
-Return ONLY valid JSON in this EXACT format:
+CRITICAL: Return ONLY a valid JSON object. No markdown, no code blocks, no explanations.
+
+Format:
 {{
   "domain": "{domain}",
   "totalDays": {days},
@@ -256,17 +258,13 @@ Return ONLY valid JSON in this EXACT format:
     {{
       "day": 1,
       "topics": ["Topic name"],
-      "tasks": [
-        "Study X for Y minutes",
-        "Practice exercises for Z minutes",
-        "Review and take notes"
-      ],
-      "notes": "Helpful guidance for this day"
+      "tasks": ["Study topic for X minutes", "Practice exercises", "Review notes"],
+      "notes": "Day 1 guidance"
     }}
   ]
 }}
 
-Create a realistic, progressive plan that builds knowledge day by day.
+Generate {days} days of structured learning. Output valid JSON only.
 `);
 
     const weaknessContext = weaknesses.length > 0
@@ -287,9 +285,24 @@ Create a realistic, progressive plan that builds knowledge day by day.
     
     let planData;
     try {
-      planData = JSON.parse(response.content);
+      // Clean up response - remove markdown code blocks if present
+      let jsonString = response.content.trim();
+      
+      // Remove markdown code blocks
+      if (jsonString.startsWith('```')) {
+        jsonString = jsonString.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      }
+      
+      // Try to find JSON object in the response
+      const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonString = jsonMatch[0];
+      }
+      
+      planData = JSON.parse(jsonString);
     } catch (parseError) {
-      console.error('Failed to parse learning plan, using mock:', parseError);
+      console.error('Failed to parse learning plan:', parseError);
+      console.error('AI Response:', response.content.substring(0, 500));
       return createLearningPlanMock(profileJson);
     }
 

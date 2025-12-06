@@ -164,6 +164,42 @@ const sampleData = {
       }
     ]
   },
+  devops: {
+    title: 'DevOps Fundamentals',
+    domain: 'DevOps',
+    description: 'Learn DevOps practices, CI/CD, and infrastructure automation',
+    level: 'Intermediate',
+    modules: [
+      {
+        title: 'Introduction to DevOps',
+        order: 1,
+        contentItems: [
+          {
+            type: 'video',
+            provider: 'youtube',
+            title: 'DevOps Tutorial for Beginners',
+            url: 'https://www.youtube.com/watch?v=Xrgk023l4lI',
+            duration: 3600,
+            tags: ['devops', 'ci/cd', 'automation']
+          }
+        ]
+      },
+      {
+        title: 'Docker Basics',
+        order: 2,
+        contentItems: [
+          {
+            type: 'video',
+            provider: 'youtube',
+            title: 'Docker Tutorial for Beginners',
+            url: 'https://www.youtube.com/watch?v=fqMOX6JJhGo',
+            duration: 7200,
+            tags: ['docker', 'containers', 'devops']
+          }
+        ]
+      }
+    ]
+  },
   react: {
     title: 'React.js Complete Course',
     domain: 'Web Development',

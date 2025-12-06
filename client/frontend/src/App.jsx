@@ -10,7 +10,10 @@ import ModuleDetail from './pages/ModuleDetail';
 import QuizPage from './pages/QuizPage';
 import DashboardPage from './pages/DashboardPage';
 import LearningPlanPage from './pages/LearningPlanPage';
+import LearningPath from './pages/LearningPath';
 import Profile from './pages/Profile';
+import TutorChat from './components/TutorChat';
+import FloatingTutor from './components/FloatingTutor';
 import './App.css';
 
 function App() {
@@ -18,6 +21,7 @@ function App() {
     <AuthProvider>
       <Router>
         <Navbar />
+        <FloatingTutor />
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
@@ -69,10 +73,26 @@ function App() {
             } 
           />
           <Route 
+            path="/path" 
+            element={
+              <PrivateRoute>
+                <LearningPath />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
             path="/profile" 
             element={
               <PrivateRoute>
                 <Profile />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/tutor" 
+            element={
+              <PrivateRoute>
+                <TutorChat />
               </PrivateRoute>
             } 
           />

@@ -26,6 +26,10 @@ const userProfileSchema = new mongoose.Schema(
       default: ''
     },
     // Additional profile fields
+    profileImage: {
+      type: String, // Store base64 encoded image
+      default: ''
+    },
     bio: {
       type: String,
       trim: true,

@@ -8,10 +8,18 @@ import './LearningPlan.css';
 
 const LearningPlanPage = () => {
   const [plan, setPlan] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [showConfigForm, setShowConfigForm] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const [config, setConfig] = useState({
+    topic: '',
+    days: 7,
+    hoursPerDay: 2,
+    difficulty: 'medium',
+    goals: ''
+  });
   const navigate = useNavigate();
 
   const showToast = (message, type = 'success') => {
@@ -35,68 +43,88 @@ const LearningPlanPage = () => {
         setPlan(savedPlans[0]);
         setError('');
       } else {
-        // Generate new plan
-        await generateNewPlan();
+        // Show config form to generate new plan
+        setShowConfigForm(true);
       }
     } catch (err) {
       console.error('Error fetching plan:', err);
-      // If no plan exists, generate one
-      await generateNewPlan();
+      // Show config form to generate new plan
+      setShowConfigForm(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const generateNewPlan = async () => {
-    try {
-      // Get user profile for topic
-      let topic = 'Web Development'; // Default
-      let strengths = [];
-      let weaknesses = [];
+  const handleConfigChange = (e) => {
+    const { name, value } = e.target;
+    setConfig(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-      try {
-        const profile = await profileAPI.getProfile();
-        topic = profile.primaryDomain || profile.topic || topic;
-      } catch (err) {
-        console.log('No profile found, using default topic');
+  const generateNewPlan = async (e) => {
+    if (e) e.preventDefault();
+    
+    setGenerating(true);
+    setError('');
+    
+    try {
+      // Get user profile for additional context
+      let profileTopic = config.topic;
+      
+      if (!profileTopic) {
+        try {
+          const profile = await profileAPI.getProfile();
+          profileTopic = profile.primaryDomain || 'Web Development';
+        } catch (err) {
+          profileTopic = 'Web Development'; // Default
+        }
       }
 
       // Try to get strengths/weaknesses from analysis
+      let strengths = [];
+      let weaknesses = [];
+      
       try {
         const analysis = await analysisAPI.getStrengthsWeaknesses();
         strengths = analysis.strengths || [];
         weaknesses = analysis.weaknesses || [];
       } catch (err) {
-        console.log('No analysis found, using mock data');
-        // Mock data for initial generation
-        strengths = ['Problem-solving', 'Quick learner'];
-        weaknesses = ['Advanced algorithms', 'System design'];
+        console.log('No analysis found');
       }
 
       // Generate plan using createPlan API
       const planData = await learningPlanAPI.createPlan({
-        topic,
+        topic: profileTopic,
         strengths,
         weaknesses,
-        difficulty: 'medium',
-        goals: [`Master ${topic} in 7 days`],
-        days: 7
+        difficulty: config.difficulty,
+        goals: config.goals ? [config.goals] : [`Master ${profileTopic}`],
+        days: parseInt(config.days),
+        hoursPerDay: parseFloat(config.hoursPerDay)
       });
 
-      setPlan(planData);
+      console.log('Generated plan data:', planData); // Debug log
+
+      // Extract the actual plan from nested data structure
+      const actualPlan = planData.plan || planData.data?.plan || planData;
+      
+      setPlan(actualPlan);
+      setShowConfigForm(false);
       setError('');
       showToast('Learning plan generated successfully!', 'success');
     } catch (err) {
       console.error('Error generating plan:', err);
-      setError(err.response?.data?.message || 'Failed to generate learning plan');
+      setError(err.response?.data?.error?.message || 'Failed to generate learning plan');
       showToast('Failed to generate learning plan', 'error');
+    } finally {
+      setGenerating(false);
     }
   };
 
   const handleRegeneratePlan = async () => {
-    setGenerating(true);
-    await generateNewPlan();
-    setGenerating(false);
+    setShowConfigForm(true);
   };
 
   const handleMarkComplete = async (dayIndex, taskIndex) => {
@@ -149,6 +177,124 @@ const LearningPlanPage = () => {
     );
   }
 
+  // Show configuration form
+  if (showConfigForm) {
+    return (
+      <div className="learning-plan-container">
+        <div className="plan-config-form">
+          <h1>Create Your Learning Plan</h1>
+          <p className="form-subtitle">Customize your learning journey based on your schedule and goals</p>
+
+          <form onSubmit={generateNewPlan}>
+            <div className="form-group">
+              <label htmlFor="topic">Topic / Domain *</label>
+              <input
+                type="text"
+                id="topic"
+                name="topic"
+                value={config.topic}
+                onChange={handleConfigChange}
+                placeholder="e.g., Web Development, Data Science, Machine Learning"
+                required
+              />
+              <small>What subject do you want to learn?</small>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="days">Duration (Days) *</label>
+                <input
+                  type="number"
+                  id="days"
+                  name="days"
+                  value={config.days}
+                  onChange={handleConfigChange}
+                  min="1"
+                  max="30"
+                  required
+                />
+                <small>1-30 days</small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="hoursPerDay">Hours per Day *</label>
+                <input
+                  type="number"
+                  id="hoursPerDay"
+                  name="hoursPerDay"
+                  value={config.hoursPerDay}
+                  onChange={handleConfigChange}
+                  min="0.5"
+                  max="12"
+                  step="0.5"
+                  required
+                />
+                <small>0.5-12 hours</small>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="difficulty">Difficulty Level *</label>
+              <select
+                id="difficulty"
+                name="difficulty"
+                value={config.difficulty}
+                onChange={handleConfigChange}
+                required
+              >
+                <option value="beginner">Beginner - New to this topic</option>
+                <option value="intermediate">Intermediate - Some experience</option>
+                <option value="advanced">Advanced - Deep dive & mastery</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="goals">Your Learning Goals</label>
+              <textarea
+                id="goals"
+                name="goals"
+                value={config.goals}
+                onChange={handleConfigChange}
+                placeholder="What do you want to achieve? (e.g., Build a portfolio project, Get job-ready, Pass certification exam)"
+                rows="4"
+              />
+              <small>Optional - helps personalize your plan</small>
+            </div>
+
+            {error && <div className="error-message">{error}</div>}
+
+            <div className="form-actions">
+              {plan && (
+                <button
+                  type="button"
+                  onClick={() => setShowConfigForm(false)}
+                  className="cancel-button"
+                  disabled={generating}
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                type="submit"
+                className="generate-button"
+                disabled={generating}
+              >
+                {generating ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Generating Plan...
+                  </>
+                ) : (
+                  '🚀 Generate Learning Plan'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (error && !plan) {
     return (
       <div className="learning-plan-container">
@@ -176,8 +322,10 @@ const LearningPlanPage = () => {
     );
   }
 
-  const days = plan.days || plan.schedule || [];
-  const planTopic = plan.topic || plan.title || 'Your Learning Journey';
+  const days = plan.plan || plan.days || plan.schedule || [];
+  const planTopic = plan.domain || plan.topic || plan.title || 'Your Learning Journey';
+  const totalDays = plan.totalDays || days.length;
+  const hoursPerDay = plan.estimatedHoursPerDay || 0;
 
   return (
     <div className="learning-plan-container">
@@ -185,19 +333,20 @@ const LearningPlanPage = () => {
         <div className="plan-header-content">
           <h1>{planTopic}</h1>
           <p className="plan-description">
-            {plan.description || `A personalized ${days.length}-day learning plan tailored to your needs`}
+            {plan.description || `A personalized ${totalDays}-day learning plan tailored to your needs`}
           </p>
           
-          {plan.duration && (
-            <div className="plan-meta">
-              <span className="plan-duration">📅 {plan.duration} days</span>
-              {plan.difficulty && (
-                <span className={`plan-difficulty ${plan.difficulty.toLowerCase()}`}>
-                  {plan.difficulty}
-                </span>
-              )}
-            </div>
-          )}
+          <div className="plan-meta">
+            <span className="plan-duration">📅 {totalDays} days</span>
+            {hoursPerDay > 0 && (
+              <span className="plan-hours">⏱️ {hoursPerDay.toFixed(1)} hrs/day</span>
+            )}
+            {plan.difficulty && (
+              <span className={`plan-difficulty ${plan.difficulty?.toLowerCase()}`}>
+                {plan.difficulty}
+              </span>
+            )}
+          </div>
         </div>
 
         <button 
