@@ -1,8 +1,24 @@
 import axios from 'axios';
 
+// Determine API base URL based on environment
+const getApiBaseUrl = () => {
+  // 1. Use environment variable if explicitly set
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // 2. In production (Railway), use relative path to same origin
+  if (import.meta.env.PROD) {
+    return '/api';
+  }
+  
+  // 3. In development, use localhost
+  return 'http://localhost:5000/api';
+};
+
 // Create axios instance with base configuration
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
