@@ -34,7 +34,7 @@ COPY --from=builder /app/package.json /app/package-lock.json* ./
 COPY --from=builder /app/apps/client/frontend/package.json ./apps/client/frontend/
 COPY --from=builder /app/apps/client/frontend/package-lock.json* ./apps/client/frontend/
 COPY --from=builder /app/server/package.json ./server/
-COPY --from=builder /app/server/package-lock.json ./server/
+COPY --from=builder /app/server/package-lock.json* ./server/
 
 # Install production dependencies only
 RUN npm ci --omit=dev
