@@ -8,10 +8,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # Copy workspace packages
-COPY server/package.json ./server/
-COPY server/package-lock.json* ./server/
 COPY apps/client/frontend/package.json ./apps/client/frontend/
 COPY apps/client/frontend/package-lock.json* ./apps/client/frontend/
+COPY server/package.json ./server/
+COPY server/package-lock.json* ./server/
 
 # Install dependencies for monorepo
 RUN npm ci
@@ -32,10 +32,10 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/package-lock.json* ./
 
 # Copy workspace packages from builder
-COPY --from=builder /app/server/package.json ./server/
-COPY --from=builder /app/server/package-lock.json* ./server/
 COPY --from=builder /app/apps/client/frontend/package.json ./apps/client/frontend/
 COPY --from=builder /app/apps/client/frontend/package-lock.json* ./apps/client/frontend/
+COPY --from=builder /app/server/package.json ./server/
+COPY --from=builder /app/server/package-lock.json* ./server/
 
 # Install production dependencies only
 RUN npm ci --omit=dev

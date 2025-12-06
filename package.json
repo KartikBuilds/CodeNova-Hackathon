@@ -4,8 +4,8 @@
   "description": "AI-based Personalized Learning Assistant - Monorepo",
   "private": true,
   "workspaces": [
-    "server",
-    "apps/client/frontend"
+    "apps/client/frontend",
+    "server"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
