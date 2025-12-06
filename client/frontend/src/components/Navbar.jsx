@@ -44,6 +44,7 @@ const Navbar = () => {
                 <NavLink to="/path">Learning Path</NavLink>
                 <NavLink to="/plan">Learning Plan</NavLink>
                 <NavLink to="/tutor">AI Tutor</NavLink>
+                <NavLink to="/flashcards">Flashcards</NavLink>
                 <NavLink to="/rag">Doc Q&A</NavLink>
                 <NavLink to="/profile">Profile</NavLink>
                 
@@ -103,6 +104,7 @@ const Navbar = () => {
                   <Link to="/path" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Learning Path</Link>
                   <Link to="/plan" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Learning Plan</Link>
                   <Link to="/tutor" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>AI Tutor</Link>
+                  <Link to="/flashcards" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Flashcards</Link>
                   <Link to="/rag" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Doc Q&A</Link>
                   <Link to="/profile" className="px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg" onClick={() => setMobileMenuOpen(false)}>Profile</Link>
                   <div className="pt-3 mt-2 border-t border-slate-100">
