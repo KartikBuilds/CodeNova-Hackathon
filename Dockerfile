@@ -1,5 +1,5 @@
 # Multi-stage build for monorepo deployment
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -21,16 +21,19 @@ COPY . .
 RUN npm run build --workspaces --if-present
 
 # Production stage
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy root package files from builder
-COPY package*.json ./
+# Copy root package files and lock files from builder
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/package-lock.json* ./
 
 # Copy workspace packages from builder
-COPY server/package.json ./server/
-COPY apps/client/frontend/package.json ./apps/client/frontend/
+COPY --from=builder /app/server/package.json ./server/
+COPY --from=builder /app/server/package-lock.json* ./server/
+COPY --from=builder /app/apps/client/frontend/package.json ./apps/client/frontend/
+COPY --from=builder /app/apps/client/frontend/package-lock.json* ./apps/client/frontend/
 
 # Install production dependencies only
 RUN npm ci --omit=dev
