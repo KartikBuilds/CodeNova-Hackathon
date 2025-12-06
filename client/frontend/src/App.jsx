@@ -12,6 +12,7 @@ import DashboardPage from './pages/DashboardPage';
 import LearningPlanPage from './pages/LearningPlanPage';
 import LearningPath from './pages/LearningPath';
 import Profile from './pages/Profile';
+import Flashcards from './pages/Flashcards';
 import TutorChat from './components/TutorChat';
 import FloatingTutor from './components/FloatingTutor';
 import DocumentRAG from './components/DocumentRAG';
@@ -86,6 +87,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Profile />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/flashcards" 
+            element={
+              <PrivateRoute>
+                <Flashcards />
               </PrivateRoute>
             } 
           />
