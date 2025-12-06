@@ -1,10 +1,54 @@
 {
+  "name": "ai-learning-assistant-monorepo",
+  "version": "1.0.0",
+  "description": "AI-based Personalized Learning Assistant - Monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm run dev --workspace=apps/server",
+    "dev:client": "npm run dev --workspace=apps/client",
+    "start": "npm run start --workspace=apps/server",
+    "start:client": "npm run preview --workspace=apps/client",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "install:all": "npm install",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "deploy:vercel": "npm run build && vercel --prod",
+    "deploy:railway": "railway up",
+    "deploy:render": "npm run build",
+    "seed": "npm run seed --workspace=apps/server"
+  },
   "dependencies": {
     "nodemon": "^3.1.11"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "autoprefixer": "^10.4.22",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KartikBuilds/CodeNova-Hackathon.git"
+  },
+  "keywords": [
+    "ai",
+    "learning",
+    "education",
+    "mern",
+    "monorepo"
+  ],
+  "author": "KartikBuilds",
+  "license": "MIT"
 }
