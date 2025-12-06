@@ -1,0 +1,29 @@
+/* App.css - Minimal global styles with Tailwind */
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Page transition animation */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
+}
+
+/* Smooth link transitions */
+a {
+  transition: color 0.2s ease;
+}
+
+/* Remove default button styles for consistent Tailwind styling */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}

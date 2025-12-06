@@ -1,0 +1,252 @@
+.tutor-chat-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+.tutor-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  margin: -20px -20px 0 -20px;
+}
+
+.tutor-chat-header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.clear-btn {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Messages Area */
+.tutor-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f8f9fa;
+}
+
+/* Message */
+.tutor-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: messageSlide 0.3s ease;
+}
+
+@keyframes messageSlide {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tutor-message-user {
+  align-items: flex-end;
+}
+
+.tutor-message-user .tutor-message-content {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px 12px 0 12px;
+}
+
+.tutor-message-assistant {
+  align-items: flex-start;
+}
+
+.tutor-message-assistant .tutor-message-content {
+  background: white;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px 12px 12px 0;
+}
+
+.tutor-message-error {
+  align-items: flex-start;
+}
+
+.tutor-message-error .tutor-message-content {
+  background: #fee;
+  color: #c33;
+  border: 1px solid #fcc;
+  border-radius: 12px;
+}
+
+.tutor-message-content {
+  max-width: 70%;
+  padding: 12px 16px;
+  word-wrap: break-word;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tutor-message-time {
+  font-size: 12px;
+  color: #999;
+  padding: 0 16px;
+}
+
+.tutor-loading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #667eea;
+  animation: typing 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Input Area */
+.tutor-chat-form {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+  margin: 0 -20px -20px -20px;
+}
+
+.tutor-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 24px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.tutor-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.tutor-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tutor-send-btn {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 24px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tutor-send-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.tutor-send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Scrollbar */
+.tutor-chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tutor-chat-messages::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.tutor-chat-messages::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 4px;
+}
+
+.tutor-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #5568d3;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tutor-chat-container {
+    height: calc(100vh - 60px);
+    border-radius: 0;
+    padding: 10px;
+  }
+
+  .tutor-chat-header {
+    margin: -10px -10px 0 -10px;
+  }
+
+  .tutor-chat-form {
+    margin: 0 -10px -10px -10px;
+    padding: 10px;
+  }
+
+  .tutor-message-content {
+    max-width: 85%;
+  }
+
+  .tutor-send-btn {
+    width: 44px;
+    padding: 12px;
+  }
+}
