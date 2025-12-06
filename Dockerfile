@@ -14,7 +14,7 @@ COPY server/package.json ./server/
 COPY server/package-lock.json* ./server/
 
 # Install dependencies for monorepo
-RUN npm ci
+RUN npm install 
 
 # Copy all source code
 COPY . .
