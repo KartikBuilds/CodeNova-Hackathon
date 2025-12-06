@@ -8,6 +8,7 @@ import quizRoutes from './routes/quizRoutes.js';
 import analysisRoutes from './routes/analysisRoutes.js';
 import tutorRoutes from './routes/tutorRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import profileRoutes from './routes/profileRoutes.js';
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/catalog', catalogRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/learning', learningPathRoutes);
 app.use('/api/learning', learningPlanRoutes); // Merged with learning path routes
 app.use('/api/quiz', quizRoutes);

@@ -1,7 +1,5 @@
 /**
- * AI Service - Handles all AI-powered features
- * 
- * TODO: Replace mock implementations with real OpenAI/GenAI API calls
+ * AI Service - Handles all AI-powered features using LangChain + Groq
  * 
  * This service provides:
  * - Quiz generation based on topic and difficulty
@@ -10,7 +8,16 @@
  * - AI tutor chat functionality
  */
 
-// Mock delay to simulate API call
+import { getGroqLLM } from '../config/langchain.js';
+import { PromptTemplate } from '@langchain/core/prompts';
+import { JsonOutputParser } from '@langchain/core/output_parsers';
+
+// Check if AI is available
+const isAIAvailable = () => {
+  return getGroqLLM() !== null;
+};
+
+// Mock delay to simulate API call (for fallback)
 const mockDelay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
@@ -24,12 +31,365 @@ const mockDelay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
  * @returns {Promise<Object>} Quiz object with questions array
  */
 export const generateQuiz = async ({ topic, difficulty = 'medium', weaknesses = [], count = 5 }) => {
-  // TODO: Replace with real OpenAI API call
-  // const response = await openai.chat.completions.create({ ... });
+  const llm = getGroqLLM();
   
-  await mockDelay();
+  // Fallback to mock if LLM not available
+  if (!llm || !isAIAvailable()) {
+    return generateQuizMock({ topic, difficulty, weaknesses, count });
+  }
 
-  // Mock quiz generation based on parameters
+  try {
+    const quizPrompt = PromptTemplate.fromTemplate(`
+You are an expert educator creating high-quality quiz questions.
+
+Generate exactly {count} multiple-choice questions about the topic: "{topic}"
+Difficulty level: {difficulty}
+{weaknessContext}
+
+CRITICAL REQUIREMENTS:
+1. Each question must have exactly 4 options
+2. Only ONE option should be correct
+3. Provide a clear explanation for each answer
+4. Make questions progressively challenging
+5. Avoid yes/no questions
+
+Return ONLY valid JSON with this EXACT structure:
+{{
+  "questions": [
+    {{
+      "id": "q1",
+      "question": "Your question text here?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correct_answer": "The exact text of the correct option",
+      "explanation": "Why this is correct and others are wrong"
+    }}
+  ]
+}}
+
+Generate {count} questions now.
+`);
+
+    const weaknessContext = weaknesses.length > 0 
+      ? `Focus areas (learner weaknesses): ${weaknesses.join(', ')}`
+      : 'Cover a broad range of concepts';
+
+    const formattedPrompt = await quizPrompt.format({
+      count,
+      topic,
+      difficulty,
+      weaknessContext
+    });
+
+    const parser = new JsonOutputParser();
+    const response = await llm.invoke(formattedPrompt);
+    
+    let quizData;
+    try {
+      // Try parsing the response content
+      quizData = JSON.parse(response.content);
+    } catch (parseError) {
+      console.error('Failed to parse AI response, using mock data:', parseError);
+      return generateQuizMock({ topic, difficulty, weaknesses, count });
+    }
+
+    // Validate and ensure correct structure
+    if (!quizData.questions || !Array.isArray(quizData.questions)) {
+      throw new Error('Invalid quiz structure returned from AI');
+    }
+
+    // Add IDs if missing
+    quizData.questions = quizData.questions.map((q, idx) => ({
+      ...q,
+      id: q.id || `q${idx + 1}`
+    }));
+
+    return {
+      topic,
+      difficulty,
+      count: quizData.questions.length,
+      questions: quizData.questions,
+      generatedAt: new Date().toISOString(),
+      source: 'groq-ai'
+    };
+
+  } catch (error) {
+    console.error('Error generating quiz with AI:', error);
+    // Fallback to mock on error
+    return generateQuizMock({ topic, difficulty, weaknesses, count });
+  }
+};
+
+/**
+ * Analyze learner's performance from quiz results
+ * 
+ * @param {Object} resultsJson - Quiz results to analyze
+ * @param {number} resultsJson.score - Number of correct answers
+ * @param {number} resultsJson.total - Total number of questions
+ * @param {Array} resultsJson.questions - Original questions
+ * @param {Array} resultsJson.answers - User's answers
+ * @returns {Promise<Object>} Performance analysis with strengths, weaknesses, and recommendations
+ */
+export const analyzePerformance = async (resultsJson) => {
+  const llm = getGroqLLM();
+  
+  if (!llm || !isAIAvailable()) {
+    return analyzePerformanceMock(resultsJson);
+  }
+
+  try {
+    const { score, total, questions = [], answers = [] } = resultsJson;
+    const percentage = total > 0 ? (score / total) * 100 : 0;
+
+    // Build analysis context
+    const wrongAnswers = questions
+      .map((q, idx) => ({
+        question: q.question,
+        userAnswer: answers[idx],
+        correctAnswer: q.correct_answer,
+        isWrong: answers[idx] !== q.correct_answer
+      }))
+      .filter(item => item.isWrong);
+
+    const analysisPrompt = PromptTemplate.fromTemplate(`
+You are an expert educational analyst. Analyze this quiz performance:
+
+Score: {score}/{total} ({percentage}%)
+Wrong Answers: {wrongAnswersCount}
+
+{wrongAnswersDetails}
+
+Provide a detailed analysis in this EXACT JSON format:
+{{
+  "score": {score},
+  "total": {total},
+  "percentage": {percentage},
+  "strengths": ["strength 1", "strength 2"],
+  "weaknesses": ["weakness 1", "weakness 2"],
+  "mistake_patterns": ["pattern 1", "pattern 2"],
+  "recommended_difficulty": "easy|medium|hard",
+  "insights": "Detailed personalized feedback paragraph"
+}}
+
+Be encouraging but honest. Provide actionable insights.
+`);
+
+    const wrongAnswersDetails = wrongAnswers.length > 0
+      ? wrongAnswers.map((wa, idx) => 
+          `${idx + 1}. Q: ${wa.question}\n   Your answer: ${wa.userAnswer}\n   Correct: ${wa.correctAnswer}`
+        ).join('\n\n')
+      : 'All answers were correct!';
+
+    const formattedPrompt = await analysisPrompt.format({
+      score,
+      total,
+      percentage: Math.round(percentage),
+      wrongAnswersCount: wrongAnswers.length,
+      wrongAnswersDetails
+    });
+
+    const response = await llm.invoke(formattedPrompt);
+    
+    let analysisData;
+    try {
+      analysisData = JSON.parse(response.content);
+    } catch (parseError) {
+      console.error('Failed to parse AI analysis, using mock:', parseError);
+      return analyzePerformanceMock(resultsJson);
+    }
+
+    return {
+      ...analysisData,
+      analyzedAt: new Date().toISOString(),
+      source: 'groq-ai'
+    };
+
+  } catch (error) {
+    console.error('Error analyzing performance with AI:', error);
+    return analyzePerformanceMock(resultsJson);
+  }
+};
+
+/**
+ * Create a personalized learning plan based on user profile
+ * 
+ * @param {Object} profileJson - User profile and learning preferences
+ * @param {string} profileJson.domain - Subject domain
+ * @param {string} profileJson.currentLevel - Current skill level
+ * @param {Array<string>} profileJson.weaknesses - Known weaknesses
+ * @param {number} profileJson.studyTimePerDay - Available study time in minutes
+ * @param {string} profileJson.learningStyle - Preferred learning style
+ * @returns {Promise<Object>} Learning plan with daily breakdown
+ */
+export const createLearningPlan = async (profileJson) => {
+  const llm = getGroqLLM();
+  
+  if (!llm || !isAIAvailable()) {
+    return createLearningPlanMock(profileJson);
+  }
+
+  try {
+    const { 
+      domain = 'General Learning', 
+      currentLevel = 'beginner',
+      weaknesses = [],
+      studyTimePerDay = 30,
+      learningStyle = 'visual',
+      days = 7 
+    } = profileJson;
+
+    const planPrompt = PromptTemplate.fromTemplate(`
+You are an expert learning advisor. Create a {days}-day personalized learning plan.
+
+Profile:
+- Domain: {domain}
+- Current Level: {currentLevel}
+- Study Time: {studyTimePerDay} minutes/day
+- Learning Style: {learningStyle}
+{weaknessContext}
+
+Return ONLY valid JSON in this EXACT format:
+{{
+  "domain": "{domain}",
+  "totalDays": {days},
+  "estimatedHoursPerDay": {hoursPerDay},
+  "plan": [
+    {{
+      "day": 1,
+      "topics": ["Topic name"],
+      "tasks": [
+        "Study X for Y minutes",
+        "Practice exercises for Z minutes",
+        "Review and take notes"
+      ],
+      "notes": "Helpful guidance for this day"
+    }}
+  ]
+}}
+
+Create a realistic, progressive plan that builds knowledge day by day.
+`);
+
+    const weaknessContext = weaknesses.length > 0
+      ? `\n- Focus Areas: ${weaknesses.join(', ')}`
+      : '';
+
+    const formattedPrompt = await planPrompt.format({
+      days,
+      domain,
+      currentLevel,
+      studyTimePerDay,
+      learningStyle,
+      weaknessContext,
+      hoursPerDay: (studyTimePerDay / 60).toFixed(1)
+    });
+
+    const response = await llm.invoke(formattedPrompt);
+    
+    let planData;
+    try {
+      planData = JSON.parse(response.content);
+    } catch (parseError) {
+      console.error('Failed to parse learning plan, using mock:', parseError);
+      return createLearningPlanMock(profileJson);
+    }
+
+    // Validate structure
+    if (!planData.plan || !Array.isArray(planData.plan)) {
+      throw new Error('Invalid learning plan structure');
+    }
+
+    return {
+      ...planData,
+      createdAt: new Date().toISOString(),
+      source: 'groq-ai'
+    };
+
+  } catch (error) {
+    console.error('Error creating learning plan with AI:', error);
+    return createLearningPlanMock(profileJson);
+  }
+};
+
+/**
+ * AI Tutor chat - Answer questions and provide guidance
+ * 
+ * @param {string} message - User's question or message
+ * @param {Object} context - Conversation context
+ * @param {string} context.topic - Current topic being discussed
+ * @param {Array<Object>} context.history - Previous messages
+ * @param {Object} context.userProfile - User's learning profile
+ * @returns {Promise<Object>} AI tutor response
+ */
+export const tutorChat = async (message, context = {}) => {
+  const llm = getGroqLLM();
+  
+  if (!llm || !isAIAvailable()) {
+    return tutorChatMock(message, context);
+  }
+
+  try {
+    const { topic = 'general', history = [], userProfile = {} } = context;
+
+    // Build conversation history for context
+    const historyContext = history.length > 0
+      ? history.slice(-3).map(h => `${h.role}: ${h.message}`).join('\n')
+      : 'No previous conversation';
+
+    const tutorPrompt = PromptTemplate.fromTemplate(`
+You are an encouraging, patient AI tutor helping a student learn {topic}.
+
+Previous conversation:
+{historyContext}
+
+Student asks: "{message}"
+
+Respond as a helpful tutor. Provide:
+1. A clear, concise answer
+2. An explanation if needed
+3. 2-3 follow-up suggestions
+
+Return ONLY valid JSON:
+{{
+  "message": "Your detailed response here",
+  "suggestions": ["Question 1?", "Question 2?", "Question 3?"]
+}}
+
+Be encouraging, clear, and educational.
+`);
+
+    const formattedPrompt = await tutorPrompt.format({
+      topic,
+      message,
+      historyContext
+    });
+
+    const response = await llm.invoke(formattedPrompt);
+    
+    let chatData;
+    try {
+      chatData = JSON.parse(response.content);
+    } catch (parseError) {
+      console.error('Failed to parse tutor chat, using mock:', parseError);
+      return tutorChatMock(message, context);
+    }
+
+    return {
+      ...chatData,
+      conversationId: context.conversationId || `conv_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      source: 'groq-ai'
+    };
+
+  } catch (error) {
+    console.error('Error in tutor chat with AI:', error);
+    return tutorChatMock(message, context);
+  }
+};
+
+// ==================== MOCK FALLBACK FUNCTIONS ====================
+
+const generateQuizMock = async ({ topic, difficulty, weaknesses, count }) => {
+  await mockDelay();
   const questions = [];
   
   for (let i = 0; i < count; i++) {
@@ -53,50 +413,36 @@ export const generateQuiz = async ({ topic, difficulty = 'medium', weaknesses = 
     count: questions.length,
     questions,
     generatedAt: new Date().toISOString(),
-    note: "[MOCK DATA] Real AI generation not yet implemented"
+    source: 'mock-fallback',
+    note: "[MOCK DATA] Groq API key not configured"
   };
 };
 
-/**
- * Analyze learner's performance from quiz results
- * 
- * @param {Object} resultsJson - Quiz results to analyze
- * @param {number} resultsJson.score - Number of correct answers
- * @param {number} resultsJson.total - Total number of questions
- * @param {Array} resultsJson.questions - Original questions
- * @param {Array} resultsJson.answers - User's answers
- * @returns {Promise<Object>} Performance analysis with strengths, weaknesses, and recommendations
- */
-export const analyzePerformance = async (resultsJson) => {
-  // TODO: Replace with real AI analysis using OpenAI
-  // const response = await openai.chat.completions.create({ ... });
-  
+const analyzePerformanceMock = async (resultsJson) => {
   await mockDelay();
-
-  const { score, total, questions = [], answers = [] } = resultsJson;
+  const { score, total } = resultsJson;
   const percentage = total > 0 ? (score / total) * 100 : 0;
 
-  // Mock analysis based on score
   let recommendedDifficulty = 'medium';
   let strengths = ['Problem solving', 'Basic concepts'];
   let weaknesses = ['Advanced topics', 'Complex scenarios'];
-  let mistakePatterns = ['Selecting distractor options', 'Time management issues'];
+  let mistakePatterns = ['Selecting distractor options', 'Time management'];
 
   if (percentage >= 80) {
     recommendedDifficulty = 'hard';
-    strengths = ['Strong conceptual understanding', 'Excellent problem-solving skills'];
+    strengths = ['Strong conceptual understanding', 'Excellent problem-solving'];
     weaknesses = ['Minor gaps in advanced topics'];
     mistakePatterns = ['Occasional calculation errors'];
   } else if (percentage >= 60) {
     recommendedDifficulty = 'medium';
     strengths = ['Good grasp of fundamentals', 'Consistent performance'];
-    weaknesses = ['Need more practice on complex problems', 'Speed and accuracy'];
+    weaknesses = ['Complex problems need practice', 'Speed and accuracy'];
     mistakePatterns = ['Rushing through problems', 'Missing key details'];
   } else {
     recommendedDifficulty = 'easy';
     strengths = ['Willingness to learn', 'Basic understanding'];
-    weaknesses = ['Fundamental concepts need reinforcement', 'Problem-solving strategies'];
-    mistakePatterns = ['Conceptual misunderstandings', 'Lack of practice'];
+    weaknesses = ['Fundamentals need reinforcement', 'Problem-solving strategies'];
+    mistakePatterns = ['Conceptual misunderstandings', 'Need more practice'];
   }
 
   return {
@@ -109,27 +455,13 @@ export const analyzePerformance = async (resultsJson) => {
     recommended_difficulty: recommendedDifficulty,
     insights: `Based on your performance (${score}/${total}), you demonstrate ${percentage >= 70 ? 'strong' : percentage >= 50 ? 'moderate' : 'developing'} understanding. Focus on improving ${weaknesses[0]}.`,
     analyzedAt: new Date().toISOString(),
-    note: "[MOCK DATA] Real AI analysis not yet implemented"
+    source: 'mock-fallback',
+    note: "[MOCK DATA] Groq API key not configured"
   };
 };
 
-/**
- * Create a personalized learning plan based on user profile
- * 
- * @param {Object} profileJson - User profile and learning preferences
- * @param {string} profileJson.domain - Subject domain
- * @param {string} profileJson.currentLevel - Current skill level
- * @param {Array<string>} profileJson.weaknesses - Known weaknesses
- * @param {number} profileJson.studyTimePerDay - Available study time in minutes
- * @param {string} profileJson.learningStyle - Preferred learning style
- * @returns {Promise<Object>} Learning plan with daily breakdown
- */
-export const createLearningPlan = async (profileJson) => {
-  // TODO: Replace with real AI planning using OpenAI
-  // const response = await openai.chat.completions.create({ ... });
-  
+const createLearningPlanMock = async (profileJson) => {
   await mockDelay();
-
   const { 
     domain = 'General Learning', 
     weaknesses = ['Various topics'],
@@ -137,7 +469,6 @@ export const createLearningPlan = async (profileJson) => {
     days = 7 
   } = profileJson;
 
-  // Mock learning plan generation
   const plan = [];
   const topicsToFocus = weaknesses.length > 0 ? weaknesses : ['Fundamentals', 'Practice', 'Review'];
 
@@ -167,86 +498,28 @@ export const createLearningPlan = async (profileJson) => {
     estimatedHoursPerDay: studyTimePerDay / 60,
     plan,
     createdAt: new Date().toISOString(),
-    note: "[MOCK DATA] Real AI planning not yet implemented"
+    source: 'mock-fallback',
+    note: "[MOCK DATA] Groq API key not configured"
   };
 };
 
-/**
- * AI Tutor chat - Answer questions and provide guidance
- * 
- * @param {string} message - User's question or message
- * @param {Object} context - Conversation context
- * @param {string} context.topic - Current topic being discussed
- * @param {Array<Object>} context.history - Previous messages
- * @param {Object} context.userProfile - User's learning profile
- * @returns {Promise<Object>} AI tutor response
- */
-export const tutorChat = async (message, context = {}) => {
-  // TODO: Replace with real OpenAI chat completion
-  // const response = await openai.chat.completions.create({ ... });
-  
+const tutorChatMock = async (message, context = {}) => {
   await mockDelay(300);
-
-  const { topic = 'general', history = [] } = context;
-
-  // Mock intelligent responses based on message content
-  let response = '';
-  let suggestions = [];
-  
+  const { topic = 'general' } = context;
   const messageLower = message.toLowerCase();
 
+  let response = '';
+  let suggestions = [];
+
   if (messageLower.includes('help') || messageLower.includes('how')) {
-    response = `I'd be happy to help you with ${topic}! Let me break this down into simple steps: 
-    
-1. First, understand the basic concept
-2. Look at some examples
-3. Try practicing with similar problems
-4. Review any mistakes you make
-
-What specific part would you like me to explain in more detail?`;
-    suggestions = [
-      'Explain the basics',
-      'Show me an example',
-      'Give me practice problems'
-    ];
+    response = `I'd be happy to help you with ${topic}! Let me break this down:\n\n1. Understand the basic concept\n2. Look at examples\n3. Practice with problems\n4. Review mistakes\n\nWhat specific part would you like me to explain?`;
+    suggestions = ['Explain the basics', 'Show me an example', 'Give me practice problems'];
   } else if (messageLower.includes('explain') || messageLower.includes('what is')) {
-    response = `Great question! In the context of ${topic}, this concept is fundamental. Here's a clear explanation:
-
-This is a core principle that helps you understand how different elements work together. Think of it as building blocks - each part contributes to the whole understanding.
-
-Would you like me to provide a practical example to illustrate this?`;
-    suggestions = [
-      'Yes, show me an example',
-      'I need more clarification',
-      'What should I practice next?'
-    ];
-  } else if (messageLower.includes('example')) {
-    response = `Here's a practical example for ${topic}:
-
-Let's say we have a problem where we need to apply this concept. The step-by-step approach would be:
-
-1. Identify what we're looking for
-2. Apply the relevant formula or method
-3. Work through the calculations
-4. Verify our answer makes sense
-
-Does this example help clarify the concept?`;
-    suggestions = [
-      'Give me another example',
-      'I want to try a problem',
-      'Explain a different way'
-    ];
+    response = `Great question! In ${topic}, this concept is fundamental. Think of it as building blocks - each part contributes to the whole understanding.\n\nWould you like a practical example?`;
+    suggestions = ['Yes, show me an example', 'I need more clarification', 'What should I practice next?'];
   } else {
-    response = `I understand you're asking about "${message}". This is an interesting question about ${topic}!
-
-Let me provide some guidance: The key to understanding this is to focus on the fundamental principles and see how they apply to different scenarios. Practice is essential for mastery.
-
-Is there a specific aspect you'd like me to focus on?`;
-    suggestions = [
-      'Tell me more',
-      'Give me practice problems',
-      'What should I study next?'
-    ];
+    response = `I understand you're asking about "${message}". The key is to focus on fundamental principles and see how they apply to different scenarios.\n\nIs there a specific aspect you'd like me to focus on?`;
+    suggestions = ['Tell me more', 'Give me practice problems', 'What should I study next?'];
   }
 
   return {
@@ -254,7 +527,8 @@ Is there a specific aspect you'd like me to focus on?`;
     suggestions,
     conversationId: context.conversationId || `conv_${Date.now()}`,
     timestamp: new Date().toISOString(),
-    note: "[MOCK DATA] Real AI chat not yet implemented"
+    source: 'mock-fallback',
+    note: "[MOCK DATA] Groq API key not configured"
   };
 };
 

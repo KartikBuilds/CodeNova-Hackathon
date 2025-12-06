@@ -10,7 +10,8 @@ const quizSessionSchema = new mongoose.Schema(
     moduleId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Module',
-      required: [true, 'Module ID is required']
+      required: false,
+      default: null
     },
     topic: {
       type: String,

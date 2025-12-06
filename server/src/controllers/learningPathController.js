@@ -61,18 +61,29 @@ export const getLearningPath = async (req, res, next) => {
 // @access  Private
 export const rebuildLearningPath = async (req, res, next) => {
   try {
-    const { domain } = req.body;
+    let { domain } = req.body;
 
-    // Validate domain
+    // If domain is not provided, get it from user's profile
     if (!domain) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Domain is required',
-          status: 400
-        }
-      });
+      const UserProfile = (await import('../models/UserProfile.js')).default;
+      const userProfile = await UserProfile.findOne({ userId: req.user.id });
+      
+      console.log('User profile:', userProfile); // Debug log
+      
+      if (!userProfile || !userProfile.primaryDomain) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Domain is required. Please set your primary domain in profile first.',
+            status: 400
+          }
+        });
+      }
+      
+      domain = userProfile.primaryDomain;
     }
+
+    console.log('Looking for courses in domain:', domain); // Debug log
 
     // Find all courses in the domain
     const courses = await Course.find({ 
@@ -84,14 +95,32 @@ export const rebuildLearningPath = async (req, res, next) => {
         options: { sort: { order: 1 } }
       });
 
+    console.log('Found courses:', courses.length); // Debug log
+
     if (!courses || courses.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: `No courses found for domain: ${domain}`,
-          status: 404
-        }
+      // Try case-insensitive search
+      const coursesAnyCase = await Course.find({
+        domain: { $regex: new RegExp(`^${domain}$`, 'i') }
+      }).populate({
+        path: 'modules',
+        select: 'title order',
+        options: { sort: { order: 1 } }
       });
+
+      console.log('Case-insensitive search found:', coursesAnyCase.length); // Debug log
+
+      if (!coursesAnyCase || coursesAnyCase.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            message: `No courses found for domain: ${domain}. Available domains: ${await Course.distinct('domain').then(d => d.join(', '))}`,
+            status: 404
+          }
+        });
+      }
+
+      // Use the case-insensitive results
+      courses.push(...coursesAnyCase);
     }
 
     // TODO: AI integration will go here to intelligently select and order modules

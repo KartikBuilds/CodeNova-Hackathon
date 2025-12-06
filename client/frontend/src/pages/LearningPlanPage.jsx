@@ -79,7 +79,8 @@ const LearningPlanPage = () => {
         strengths,
         weaknesses,
         difficulty: 'medium',
-        goals: `Master ${topic} in ${7} days`,
+        goals: [`Master ${topic} in 7 days`],
+        days: 7
       });
 
       setPlan(planData);

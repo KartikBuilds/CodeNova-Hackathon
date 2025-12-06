@@ -20,15 +20,14 @@ const Profile = () => {
 
   const domains = [
     'Web Development',
-    'Data Structures & Algorithms',
+    'Data Science',
+    'Machine Learning',
     'AI/ML',
     'Mobile Development',
     'DevOps',
     'Cloud Computing',
     'Cybersecurity',
     'Database Management',
-    'Backend Development',
-    'Frontend Development',
   ];
 
   const levels = [

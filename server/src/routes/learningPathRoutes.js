@@ -5,12 +5,12 @@ import {
   updateModuleStatus,
   getProgress
 } from '../controllers/learningPathController.js';
-import authMiddleware from '../middlewares/authMiddleware.js';
+import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // All routes require authentication
-router.use(authMiddleware);
+router.use(protect);
 
 // GET /api/learning/path?domain=value - Get user's learning path for a domain
 router.get('/path', getLearningPath);

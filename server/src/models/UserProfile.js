@@ -8,6 +8,24 @@ const userProfileSchema = new mongoose.Schema(
       required: [true, 'User ID is required'],
       unique: true
     },
+    // Profile setup fields
+    primaryDomain: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    level: {
+      type: String,
+      enum: ['beginner', 'intermediate', 'advanced', ''],
+      default: ''
+    },
+    goals: {
+      type: String,
+      trim: true,
+      maxlength: [1000, 'Goals cannot exceed 1000 characters'],
+      default: ''
+    },
+    // Additional profile fields
     bio: {
       type: String,
       trim: true,

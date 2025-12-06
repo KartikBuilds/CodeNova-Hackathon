@@ -1,5 +1,6 @@
 import Course from '../models/Course.js';
 import Module from '../models/Module.js';
+import ContentItem from '../models/ContentItem.js';
 
 // @desc    Get unique list of domains
 // @route   GET /api/catalog/domains
@@ -32,11 +33,13 @@ export const getCourses = async (req, res, next) => {
     const filter = {};
 
     if (domain) {
-      filter.domain = domain.toLowerCase();
+      // Case-insensitive domain search
+      filter.domain = { $regex: new RegExp(`^${domain}$`, 'i') };
     }
 
     if (level) {
-      filter.level = level.toLowerCase();
+      // Case-insensitive level search
+      filter.level = { $regex: new RegExp(`^${level}$`, 'i') };
     }
 
     // Text search if search parameter provided

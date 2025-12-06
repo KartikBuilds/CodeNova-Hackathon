@@ -20,4 +20,7 @@ router.get('/trends', getPerformanceTrends);
 // GET /api/analysis/summary - Get strengths and weaknesses summary
 router.get('/summary', getAnalysisSummary);
 
+// GET /api/analysis/strengths-weaknesses - Alias for summary
+router.get('/strengths-weaknesses', getAnalysisSummary);
+
 export default router;

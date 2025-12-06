@@ -55,19 +55,11 @@ export const getDashboardSummary = async (req, res, next) => {
     // Determine mastered topics (>= 80% average) and weak topics (< 60% average)
     const topics_mastered = Object.values(topicPerformance)
       .filter(perf => perf.averagePercentage >= 80)
-      .map(perf => ({
-        topic: perf.topic,
-        score: perf.averagePercentage,
-        quizzes: perf.totalQuizzes
-      }));
+      .map(perf => perf.topic);
 
     const weak_topics = Object.values(topicPerformance)
       .filter(perf => perf.averagePercentage < 60)
-      .map(perf => ({
-        topic: perf.topic,
-        score: perf.averagePercentage,
-        quizzes: perf.totalQuizzes
-      }));
+      .map(perf => perf.topic);
 
     // Create history array (recent quiz sessions)
     const history = quizSessions.slice(0, 10).map(session => ({
@@ -98,6 +90,27 @@ export const getDashboardSummary = async (req, res, next) => {
       };
     });
 
+    // Create score_history for charts (last 10 quizzes with date formatting)
+    const score_history = quizSessions.slice(0, 10).reverse().map((session, index) => ({
+      date: session.createdAt.toISOString().split('T')[0],
+      score: Math.round((session.score / session.total) * 100),
+      quiz: `Quiz ${index + 1}`
+    }));
+
+    // Create recent_activity
+    const recent_activity = quizSessions.slice(0, 5).map(session => ({
+      type: 'quiz',
+      title: `${session.topic} Quiz`,
+      date: session.createdAt.toISOString().split('T')[0],
+      score: Math.round((session.score / session.total) * 100)
+    }));
+
+    // Calculate learning streak (mock for now - would need daily tracking)
+    const learning_streak = quizSessions.length > 0 ? Math.min(quizSessions.length, 7) : 0;
+
+    // Calculate total learning time (estimate based on quizzes)
+    const total_learning_time = Math.round(quizSessions.length * 0.5); // Estimate 30 min per quiz
+
     // Fetch user profile for additional info
     const userProfile = await UserProfile.findOne({ userId })
       .select('stats preferences');
@@ -109,6 +122,10 @@ export const getDashboardSummary = async (req, res, next) => {
         avg_score,
         topics_mastered,
         weak_topics,
+        score_history,
+        recent_activity,
+        learning_streak,
+        total_learning_time,
         history,
         learning_progress,
         profile_stats: userProfile ? {
