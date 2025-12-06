@@ -1,53 +1,230 @@
-# AI-Based Personalized Learning Assistant
+# 🎓 AI-Based Personalized Learning Assistant
 
-A full-stack web application that provides personalized learning experiences with AI-powered quizzes, performance analysis, and adaptive learning plans.
+<div align="center">
 
-## 🚀 Features
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
+![React](https://img.shields.io/badge/react-19.2.0-61dafb.svg)
+![MongoDB](https://img.shields.io/badge/mongodb-8.0%2B-green.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-- **User Authentication**: Secure registration and login with JWT tokens
-- **Course Catalog**: Browse courses organized by domain (Web Development, Data Science, etc.)
-- **Interactive Quizzes**: AI-generated quizzes with multiple-choice questions
-- **Performance Analysis**: Get insights on strengths, weaknesses, and recommended difficulty levels
-- **Learning Plans**: Personalized day-by-day study plans based on your performance
-- **Dashboard**: Track your progress with charts and statistics
-- **AI Tutor Chat**: Get instant help with your learning topics
+**An intelligent, AI-powered learning platform that adapts to your unique learning journey**
+
+[Features](#-features) • [Demo](#-demo) • [Installation](#-quick-start) • [Documentation](#-documentation) • [Contributing](#-contributing)
+
+</div>
+
+---
+
+## 📖 Table of Contents
+
+- [Overview](#-overview)
+- [Features](#-features)
+- [Demo](#-demo)
+- [Tech Stack](#-tech-stack)
+- [Quick Start](#-quick-start)
+- [Project Structure](#-project-structure)
+- [API Documentation](#-api-documentation)
+- [Deployment](#-deployment)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Support](#-support)
+
+---
+
+## 🌟 Overview
+
+The **AI-Based Personalized Learning Assistant** revolutionizes online education by combining artificial intelligence with adaptive learning techniques. Unlike traditional e-learning platforms that offer one-size-fits-all content, our platform:
+
+- 📊 **Analyzes** your learning patterns and performance in real-time
+- 🤖 **Generates** personalized quizzes tailored to your skill level
+- 🎯 **Adapts** learning paths based on your strengths and weaknesses
+- 💬 **Provides** 24/7 AI tutor support for instant help
+- 📈 **Tracks** progress with comprehensive analytics
+
+### Problem We Solve
+
+Traditional learning platforms struggle with:
+- Generic content that doesn't adapt to individual needs
+- Lack of real-time feedback and personalized guidance
+- Difficulty identifying and addressing knowledge gaps
+- Limited access to one-on-one tutoring
+
+Our solution uses AI to create a truly personalized learning experience that scales.
+
+---
+
+## ✨ Features
+
+### 🔐 **User Management**
+- Secure authentication with JWT tokens (7-day expiration)
+- Customizable user profiles with learning preferences
+- Profile picture upload (file system or curated assets)
+- Learning style identification (visual, auditory, reading, kinesthetic)
+
+### 📚 **Comprehensive Course Catalog**
+- **50+ Pre-loaded Courses** across 7 major domains:
+  - 🌐 Web Development (MERN Stack, React, Vue, Angular)
+  - 📊 Data Science (Python, R, Statistics)
+  - 🤖 Machine Learning & AI (TensorFlow, PyTorch)
+  - ⚙️ DevOps (Docker, Kubernetes, CI/CD)
+  - ☁️ Cloud Computing (AWS, Azure, GCP)
+  - 📱 Mobile Development (React Native, Flutter)
+  - 🔒 Cybersecurity (Ethical Hacking, Network Security)
+  
+- Three difficulty levels: Beginner → Intermediate → Advanced
+- Smart pagination (9 courses per page)
+- Advanced filtering and search capabilities
+
+### 🧠 **AI-Powered Quiz System**
+- **Dynamic Question Generation** using Groq LLM (LangChain integration)
+- Adaptive difficulty based on performance history
+- Multiple-choice questions with detailed explanations
+- Real-time grading and instant feedback
+- Focused questions on identified weak areas
+
+### 📊 **Performance Analytics**
+- Comprehensive strength/weakness analysis
+- Topic-wise performance breakdown
+- Historical trend tracking
+- Difficulty level recommendations
+- Visual progress charts (powered by Recharts)
+
+### 🎯 **Personalized Learning Plans**
+- AI-generated 7-day study schedules
+- Daily task breakdowns with time estimates
+- Progressive difficulty scaling
+- Integration with personal goals and availability
+- Motivational guidance and best practices
+
+### 🤖 **AI Tutor Chat**
+- 24/7 conversational AI assistant
+- Context-aware responses
+- Code explanation and debugging support
+- Topic suggestions based on learning path
+- Persistent conversation history
+
+### 🗂️ **Learning Path Management**
+- Structured module sequences per domain
+- Progress tracking (not-started → in-progress → completed)
+- Visual progress indicators
+- Adaptive path rebuilding
+
+### 📇 **Flashcard System**
+- Spaced repetition algorithm
+- Custom deck creation
+- Due card tracking
+- Review performance analytics
+
+### 📈 **Interactive Dashboard**
+- Real-time progress visualization
+- Activity timeline
+- Performance charts
+- Quick action shortcuts
+- Personalized recommendations
+
+### 📄 **Document Q&A (RAG)**
+- Upload and analyze study materials
+- AI-powered document summarization
+- Question-answering on content
+- Context-aware intelligent responses
+
+---
+
+## 🎬 Demo
+
+### Screenshots
+
+**Course Catalog with Pagination**
+```
+[Screenshot placeholder - Catalog page showing filtered courses]
+```
+
+**AI-Generated Quiz Interface**
+```
+[Screenshot placeholder - Quiz page with multiple choice questions]
+```
+
+**Performance Analytics Dashboard**
+```
+[Screenshot placeholder - Dashboard with charts and statistics]
+```
+
+**AI Tutor Chat**
+```
+[Screenshot placeholder - Chat interface with AI tutor]
+```
+
+**Personalized Learning Plan**
+```
+[Screenshot placeholder - 7-day study plan]
+```
+
+### Live Demo
+🚀 **[Try Live Demo](https://your-demo-url.railway.app)** *(Coming Soon)*
+
+**Test Credentials:**
+```
+Email: demo@example.com
+Password: Demo123!
+```
+
+---
 
 ## 🛠️ Tech Stack
 
-### Backend
-- **Node.js** with **Express.js**
-- **MongoDB** with **Mongoose**
-- **JWT** for authentication
-- **bcrypt** for password hashing
-- RESTful API architecture
-
 ### Frontend
-- **React** with **Vite**
-- **React Router** for navigation
-- **Axios** for API calls
-- **Recharts** for data visualization
-- Context API for state management
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| ![React](https://img.shields.io/badge/React-19.2.0-61dafb?logo=react) | 19.2.0 | UI library with modern hooks |
+| ![Vite](https://img.shields.io/badge/Vite-7.2.5-646cff?logo=vite) | 7.2.5 | Lightning-fast build tool |
+| ![Tailwind](https://img.shields.io/badge/Tailwind-3.4.18-38bdf8?logo=tailwind-css) | 3.4.18 | Utility-first CSS framework |
+| ![React Router](https://img.shields.io/badge/React_Router-7.10.1-ca4245?logo=react-router) | 7.10.1 | Client-side routing |
+| ![Axios](https://img.shields.io/badge/Axios-1.13.2-5a29e4?logo=axios) | 1.13.2 | HTTP client |
+| ![Recharts](https://img.shields.io/badge/Recharts-3.5.1-ff6b6b) | 3.5.1 | Data visualization |
 
-## 📋 Prerequisites
+### Backend
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| ![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js) | 18+ | JavaScript runtime |
+| ![Express](https://img.shields.io/badge/Express-4.18.2-000000?logo=express) | 4.18.2 | Web framework |
+| ![MongoDB](https://img.shields.io/badge/MongoDB-8.0+-47a248?logo=mongodb) | 8.0+ | NoSQL database |
+| ![Mongoose](https://img.shields.io/badge/Mongoose-8.0.3-880000) | 8.0.3 | MongoDB ODM |
+| ![JWT](https://img.shields.io/badge/JWT-9.0.2-000000?logo=json-web-tokens) | 9.0.2 | Authentication |
+| ![bcrypt](https://img.shields.io/badge/bcrypt-2.4.3-338836) | 2.4.3 | Password hashing |
 
-Before running this application, make sure you have:
+### AI & Machine Learning
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| ![LangChain](https://img.shields.io/badge/LangChain-1.1.5-121212) | 1.1.5 | LLM framework |
+| Groq LLM | 1.0.2 | Fast AI inference |
 
-- **Node.js** (v14 or higher)
-- **MongoDB** (running locally or MongoDB Atlas connection string)
-- **npm** or **yarn**
+### DevOps & Deployment
+- **Docker** - Containerization
+- **Railway** - Full-stack deployment
+- **GitHub Actions** - CI/CD pipeline
+- **MongoDB Atlas** - Cloud database
 
-## 🔧 Installation & Setup
+---
 
-### 1. Clone the Repository
+## 🚀 Quick Start
+
+### Prerequisites
+
+Ensure you have the following installed:
+
+- **Node.js** v18.0.0+ ([Download](https://nodejs.org/))
+- **npm** v9.0.0+ (comes with Node.js)
+- **MongoDB** v8.0+ ([Download](https://www.mongodb.com/try/download/community)) OR [MongoDB Atlas account](https://www.mongodb.com/cloud/atlas)
+- **Git** ([Download](https://git-scm.com/downloads))
+
+### Installation
+
+#### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/KartikBuilds/CodeNova-Hackathon.git
 cd "AI-based Personalized Learning Assistant"
-```
-
-### 2. Backend Setup
-
-```bash
 # Navigate to server directory
 cd server
 
