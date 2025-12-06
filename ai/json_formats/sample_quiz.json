@@ -1,0 +1,23 @@
+{
+  "questions": [
+    {
+      "id": "q1",
+      "question": "Factor x² + 5x + 6.",
+      "options": [
+        "(x + 1)(x + 6)",
+        "(x + 2)(x + 3)",
+        "(x + 3)(x + 5)",
+        "(x - 2)(x - 3)"
+      ],
+      "correct_answer": "(x + 2)(x + 3)",
+      "explanation": "2 + 3 = 5 and 2 × 3 = 6."
+    },
+    {
+      "id": "q2",
+      "question": "Solve the equation 2x + 3 = 11",
+      "options": ["4", "6", "8", "3"],
+      "correct_answer": "4",
+      "explanation": "Subtract 3 and divide by 2."
+    }
+  ]
+}
