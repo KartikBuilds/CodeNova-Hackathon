@@ -39,17 +39,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ===========================
-// Root and Health Check Routes
+// Health Check Route
 // ===========================
-
-// Root API endpoint
-app.get('/', (req, res) => {
-  res.status(200).json({
-    message: 'CodeNova API is running successfully',
-    version: '1.0.0',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // Health check endpoint (used by Railway and monitoring)
 app.get('/api/health', (req, res) => {
