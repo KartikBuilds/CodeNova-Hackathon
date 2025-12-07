@@ -28,10 +28,64 @@ const DocumentRAG = () => {
       
       const reader = new FileReader();
       
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           console.log(`[extractTextFromFile] onload triggered for ${file.name}`);
-          const text = e.target.result;
+          let text = '';
+          
+          // Handle PDF files differently
+          if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+            // For PDF files, extract readable text from the binary content
+            const arrayBuffer = e.target.result;
+            const uint8Array = new Uint8Array(arrayBuffer);
+            
+            // Convert to string and extract text between stream markers
+            let pdfString = '';
+            for (let i = 0; i < uint8Array.length; i++) {
+              const char = uint8Array[i];
+              // Only include printable ASCII characters
+              if (char >= 32 && char <= 126) {
+                pdfString += String.fromCharCode(char);
+              } else if (char === 10 || char === 13) {
+                pdfString += ' ';
+              }
+            }
+            
+            // Try to extract text content from PDF
+            // Look for text between BT (begin text) and ET (end text) markers
+            const textMatches = pdfString.match(/\(([^)]+)\)/g) || [];
+            const extractedTexts = textMatches
+              .map(match => match.slice(1, -1)) // Remove parentheses
+              .filter(t => t.length > 2 && !/^[%\d\s.]+$/.test(t)) // Filter out numbers/metadata
+              .filter(t => !/^[A-Z]{1,3}\d+/.test(t)) // Filter PDF operators
+              .join(' ');
+            
+            if (extractedTexts.length > 100) {
+              text = extractedTexts;
+            } else {
+              // Fallback: Extract any readable sentences
+              const sentences = pdfString.match(/[A-Z][a-z]+(?:\s+[a-z]+)+[.!?]/g) || [];
+              const words = pdfString.match(/\b[A-Za-z]{3,}\b/g) || [];
+              text = sentences.length > 5 ? sentences.join(' ') : words.slice(0, 500).join(' ');
+            }
+            
+            // Clean up the extracted text
+            text = text
+              .replace(/\s+/g, ' ')
+              .replace(/[^\x20-\x7E\n]/g, '')
+              .trim();
+            
+            // If still no meaningful text, provide a helpful message
+            if (text.length < 50) {
+              text = `**PDF Document: ${file.name}**\n\nThis PDF appears to contain primarily images or scanned content that cannot be extracted as text. The document has ${Math.round(file.size / 1024)} KB of data.\n\nFor better results, please:\n1. Use a PDF with selectable text\n2. Convert the PDF to a text file first\n3. Use OCR software to extract text from scanned documents`;
+            }
+            
+            console.log(`[extractTextFromFile] PDF text extracted: ${text.length} characters`);
+          } else {
+            // For text files, read directly
+            text = e.target.result;
+          }
+          
           console.log(`[extractTextFromFile] Text extracted: ${text?.length || 0} characters`);
           
           if (!text || text.length === 0) {
@@ -57,9 +111,14 @@ const DocumentRAG = () => {
         reject(new Error(`Failed to read file: ${file.name}`));
       };
       
-      // Read as text (works for .txt, .md, and sometimes PDF)
-      console.log(`[extractTextFromFile] Calling readAsText for ${file.name}`);
-      reader.readAsText(file);
+      // Read PDF as ArrayBuffer, text files as text
+      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        console.log(`[extractTextFromFile] Reading PDF as ArrayBuffer: ${file.name}`);
+        reader.readAsArrayBuffer(file);
+      } else {
+        console.log(`[extractTextFromFile] Reading as text: ${file.name}`);
+        reader.readAsText(file);
+      }
     });
   };
 
@@ -357,7 +416,7 @@ Format the response clearly with sections.`;
               <div className="document-info">
                 <h3>📋 {selectedDoc.name}</h3>
                 <div className="doc-preview">
-                  <p>{selectedDoc.content.substring(0, 200)}...</p>
+                  <p>{selectedDoc.content.substring(0, 200).replace(/[^\x20-\x7E\n]/g, '').trim()}...</p>
                 </div>
               </div>
 

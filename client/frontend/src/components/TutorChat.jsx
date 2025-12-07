@@ -170,6 +170,7 @@ const TutorChat = () => {
       const data = await response.json();
       return data.choices[0].message.content;
     } catch (err) {
+      console.log('Groq API :', import.meta.env.VITE_GROQ_API_KEY);
       console.error('Groq API Error:', err);
       throw new Error(err.message || 'Failed to connect to AI. Please check your API key configuration.');
     }
