@@ -1,278 +1,545 @@
-# Monorepo Deployment Guide
+# CodeNova Deployment Guide
 
-## Overview
-This AI-based Personalized Learning Assistant is structured as a monorepo with the following architecture:
+**Status:** Ready for deployment  
+**Architecture:** Vercel (frontend) + Render (backend) + MongoDB Atlas (database)  
+**Frontend Build Time:** ~1-2 minutes  
+**Backend Start Time:** ~30-60 seconds
+
+---
+
+## Recommended Deployment Stack
+
+### Frontend: Vercel
+- ✅ Optimal for React + Vite
+- ✅ Zero-config deployment
+- ✅ Global CDN with edge caching
+- ✅ Environment variables management
+- ✅ Free tier with generous limits
+
+### Backend: Render
+- ✅ Easy Node.js deployment
+- ✅ Built-in health checks
+- ✅ Auto-restart on failure
+- ✅ Environment variables dashboard
+- ✅ MongoDB integration ready
+
+### Database: MongoDB Atlas
+- ✅ Free M0 cluster included
+- ✅ Automatic backups
+- ✅ IP whitelist security
+- ✅ Connection string auto-generation
+
+---
+
+## Deployment Architecture
+
+### Service Layout
 
 ```
-ai-learning-assistant-monorepo/
-├── apps/
-│   ├── client/          # React frontend (Vite + Tailwind)
-│   └── server/          # Node.js backend (Express + MongoDB)
-├── ai/                  # AI prompts and examples
-├── docs/                # Documentation
-├── docker-compose.yml   # Docker orchestration
-└── package.json         # Monorepo configuration
+Frontend (Vercel)
+└─ apps/client/frontend/
+   ├─ React + Vite app
+   ├─ Build: npm run build
+   ├─ Output: dist/
+   └─ API calls to: VITE_API_URL (Render backend URL)
+
+Backend (Render)
+└─ server/
+   ├─ Express + Node.js
+   ├─ Serves: /api/* routes
+   ├─ Port: process.env.PORT || 5000
+   └─ Health check: GET /api/health
+
+Database (MongoDB Atlas)
+└─ Cloud MongoDB
+   ├─ Free M0 cluster
+   └─ URI: MONGO_URI env variable
 ```
 
-## Development Setup
+### Request Flow
 
-### Prerequisites
-- Node.js 18+
-- npm 9+
-- MongoDB (local or cloud)
-- Docker (optional)
+```
+Browser → Vercel (frontend) → Render (backend) → MongoDB Atlas
+                ↓
+            VITE_API_URL
+            (points to Render)
+```
 
-### Local Development
+---
 
-1. **Clone and Install**
-   ```bash
-   git clone <your-repo-url>
-   cd ai-learning-assistant-monorepo
-   npm run install:all
-   ```
+## Pre-Deployment Setup
 
-2. **Environment Setup**
-   ```bash
-   # In apps/server/
-   cp .env.example .env
-   # Configure MongoDB URI, JWT_SECRET, etc.
-   ```
+### 1. MongoDB Atlas (One-time)
 
-3. **Start Development Servers**
-   ```bash
-   npm run dev
-   # This starts both client (port 3000) and server (port 5000)
-   ```
+**Create MongoDB Cluster:**
+1. Go to https://mongodb.com/cloud/atlas
+2. Sign in / Create free account
+3. Create new organization
+4. Create new project: "CodeNova"
+5. Create M0 (free) cluster
+   - Cloud provider: AWS
+   - Region: closest to users
+   - Cluster name: `codenova`
+6. Create database user:
+   - Username: `codenova_user` (not your account email)
+   - Auto-generate password
+   - Copy password immediately
+7. Set IP whitelist:
+   - Click "Add IP Address"
+   - For development: add `0.0.0.0/0` (any IP)
+   - For production: add Render's static IP (from logs after first deploy)
+8. Get connection string:
+   - Click "Connect"
+   - Choose "Connect your application"
+   - Copy connection string: `mongodb+srv://username:password@cluster.mongodb.net/codenova?retryWrites=true`
 
-4. **Individual Service Commands**
-   ```bash
-   npm run dev:client    # Client only
-   npm run dev:server    # Server only
-   npm run seed          # Seed database
-   ```
+### 2. Groq API Key
 
-## Deployment Options
+1. Go to https://console.groq.com/keys
+2. Sign in / Create account
+3. Create new API key
+4. Copy key (format: `gsk_...`)
 
-### 1. Docker Deployment (Recommended)
+### 3. Generate Secrets
 
-**Complete Stack with Docker Compose:**
 ```bash
-# Build and start all services
-npm run docker:build
-npm run docker:up
+# Generate JWT_SECRET
+openssl rand -base64 32
 
-# Stop services
-npm run docker:down
+# Generate SESSION_SECRET
+openssl rand -base64 32
+
+# Example output:
+# a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
 ```
 
-**Individual Container Builds:**
+---
+
+## Vercel Frontend Deployment
+
+### Dashboard Settings
+
+**Project Setup:**
+| Setting | Value |
+|---------|-------|
+| Framework Preset | Next.js → **Other (Vite)** |
+| Root Directory | `apps/client/frontend` |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Install Command | `npm install` |
+
+**Environment Variables:**
+| Variable | Value | Example |
+|----------|-------|---------|
+| VITE_API_URL | Backend Render URL | `https://codenova-backend.onrender.com` |
+
+**Build Settings:**
+- Ignore Build Step: (leave unchecked)
+- Framework: Vite
+- Node Version: 20.x
+
+### Step-by-Step Vercel Deployment
+
+**1. Create Vercel Account**
+```
+1. Go to https://vercel.com
+2. Sign up with GitHub
+3. Authorize Vercel to access repositories
+```
+
+**2. Import Project**
+```
+In Vercel dashboard:
+1. Click "Add New"
+2. Select "Project"
+3. Search for "CodeNova-Hackathon"
+4. Click "Import"
+```
+
+**3. Configure Project**
+```
+Project Name: codenova-frontend
+Framework Preset: Other (Vite)
+Root Directory: apps/client/frontend
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+```
+
+**4. Add Environment Variables**
+```
+In Vercel → Settings → Environment Variables:
+
+Name: VITE_API_URL
+Value: https://codenova-backend.onrender.com
+Environments: Production, Preview, Development
+```
+
+**5. Deploy**
+```
+Click "Deploy"
+Wait for: "Deployment Successful"
+Note URL: https://codenova-frontend.vercel.app
+```
+
+**6. Verify Deployment**
 ```bash
-# Client container
-cd apps/client && docker build -t learning-assistant-client .
+# Frontend loads
+curl https://codenova-frontend.vercel.app
 
-# Server container
-cd apps/server && docker build -t learning-assistant-server .
+# API URL is configured
+curl https://codenova-frontend.vercel.app | grep "api" -i
+
+# Expected: HTML response with app content
 ```
 
-### 2. Vercel Deployment (Frontend + Serverless)
+---
 
-**Setup:**
+## Render Backend Deployment
+
+### Dashboard Settings
+
+**Service Configuration:**
+| Setting | Value |
+|---------|-------|
+| Service Type | Web Service (Node.js) |
+| Root Directory | `server` |
+| Build Command | `npm install` |
+| Start Command | `node src/server.js` |
+| Environment | Node 20 |
+| Port | Auto-detect from `process.env.PORT` |
+
+**Health Check:**
+| Setting | Value |
+|---------|-------|
+| Path | `/api/health` |
+| Port | `10000` |
+| Protocol | HTTP |
+| Interval | 30 seconds |
+| Timeout | 5 seconds |
+
+**Environment Variables:**
+| Variable | Value | Example |
+|----------|-------|---------|
+| NODE_ENV | production | production |
+| PORT | (auto, don't set) | |
+| MONGO_URI | MongoDB connection | mongodb+srv://user:pass@cluster... |
+| GROQ_API_KEY | Groq API key | gsk_... |
+| JWT_SECRET | Random 32+ chars | (generated) |
+| SESSION_SECRET | Random 32+ chars | (generated) |
+| CORS_ORIGIN | Frontend URL | https://codenova-frontend.vercel.app |
+| AI_MOCK_MODE | false | false |
+
+### Step-by-Step Render Deployment
+
+**1. Create Render Account**
+```
+1. Go to https://render.com
+2. Sign up with GitHub
+3. Authorize Render to access repositories
+```
+
+**2. Create Web Service**
+```
+In Render dashboard:
+1. Click "New +"
+2. Select "Web Service"
+3. Search for "CodeNova-Hackathon"
+4. Click "Connect"
+```
+
+**3. Configure Service**
+```
+Name: codenova-backend
+Environment: Node
+Build Command: npm install
+Start Command: node src/server.js
+Root Directory: server
+Instance Type: Free (for testing) or Starter+ (production)
+```
+
+**4. Add Environment Variables**
+```
+In Render → Services → codenova-backend → Environment:
+
+Click "Add Environment Variable" for each:
+
+NODE_ENV = production
+MONGO_URI = mongodb+srv://username:password@cluster.mongodb.net/codenova?retryWrites=true&w=majority
+GROQ_API_KEY = gsk_[YOUR_KEY]
+JWT_SECRET = [GENERATED_32_CHAR_STRING]
+SESSION_SECRET = [GENERATED_32_CHAR_STRING]
+CORS_ORIGIN = https://codenova-frontend.vercel.app
+AI_MOCK_MODE = false
+```
+
+**5. Deploy**
+```
+Click "Create Web Service"
+Wait for: "Your service is live at https://codenova-backend.onrender.com"
+Note URL: https://codenova-backend.onrender.com
+```
+
+**6. Get Static IP (for MongoDB whitelist)**
+```
+After deployment:
+1. Go to Settings → General
+2. Copy "Static IP"
+3. Go to MongoDB Atlas → Network Access
+4. Add Static IP to whitelist (remove 0.0.0.0/0 in production)
+```
+
+**7. Update Frontend Environment**
+```
+In Vercel → Settings → Environment Variables:
+Update VITE_API_URL to the Render URL
+(e.g., https://codenova-backend.onrender.com)
+
+This will trigger a redeploy of the frontend
+```
+
+**8. Verify Deployment**
 ```bash
-# Install Vercel CLI
-npm install -g vercel
+# Health check
+curl https://codenova-backend.onrender.com/api/health
+# Expected: {"status":"ok"}
 
-# Deploy
-npm run deploy:vercel
+# Database connection (check logs)
+# Expected log: "MongoDB Connected"
+
+# CORS check
+curl -H "Origin: https://codenova-frontend.vercel.app" \
+     https://codenova-backend.onrender.com/api/health
+# Expected: 200 OK with CORS headers
 ```
 
-**vercel.json Configuration:**
-```json
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "apps/client/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "apps/server/src/app.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "apps/client/dist/$1"
-    }
-  ]
-}
-```
+---
 
-### 3. Railway Deployment (Full Stack)
+## Post-Deployment Testing
 
-**Setup:**
+### Frontend Tests
+
 ```bash
-# Install Railway CLI
-npm install -g @railway/cli
+# Load frontend
+curl -I https://codenova-frontend.vercel.app
+# Expected: 200 OK, text/html content-type
 
-# Login and deploy
-railway login
-npm run deploy:railway
+# Check API URL configuration
+curl https://codenova-frontend.vercel.app | grep -i "api"
+# Expected: Reference to API URL in JavaScript
 ```
 
-**railway.json:**
-```json
-{
-  "deploy": {
-    "startCommand": "npm start",
-    "restartPolicyType": "on_failure"
-  }
-}
-```
+### Backend Tests
 
-### 4. Render Deployment (Full Stack)
-
-**Setup Steps:**
-1. Connect your GitHub repository to Render
-2. Create a Web Service for the server:
-   - Build Command: `npm install && npm run build`
-   - Start Command: `npm start`
-   - Root Directory: `apps/server`
-
-3. Create a Static Site for the client:
-   - Build Command: `npm install && npm run build`
-   - Publish Directory: `apps/client/dist`
-   - Root Directory: `apps/client`
-
-### 5. Heroku Deployment
-
-**Setup:**
 ```bash
-# Install Heroku CLI and create apps
-heroku create your-app-client
-heroku create your-app-server
+# Health endpoint
+curl https://codenova-backend.onrender.com/api/health
+# Expected: {"status":"ok"}
 
-# Deploy server
-git subtree push --prefix=apps/server heroku-server main
+# Protected route (no auth)
+curl -s https://codenova-backend.onrender.com/api/quiz/history
+# Expected: 401 Unauthorized
 
-# Deploy client
-git subtree push --prefix=apps/client heroku-client main
+# AI endpoint (production, no mock)
+curl -X POST https://codenova-backend.onrender.com/api/tutor/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"test"}'
+# Expected: 200 (if GROQ_API_KEY set) or 503 (if missing)
 ```
 
-## Environment Variables
+### Database Tests
 
-### Server (.env)
+```
+In Render → codenova-backend → Logs:
+1. Look for "MongoDB Connected" message
+2. Confirm no database connection errors
+3. Check for Mongoose warnings (non-fatal)
+```
+
+### End-to-End Tests
+
 ```bash
-NODE_ENV=production
-PORT=5000
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/learnAI
-JWT_SECRET=your-super-secret-jwt-key
-CORS_ORIGIN=https://your-frontend-domain.com
+# Frontend calls backend
+# 1. Open https://codenova-frontend.vercel.app
+# 2. Navigate to any AI feature (Tutor, Flashcards, etc.)
+# 3. Observe:
+#    - No CORS errors in console
+#    - API calls go to backend URL
+#    - Responses display correctly
+#    - Mock warning if GROQ_API_KEY missing
 ```
 
-### Client (.env)
-```bash
-VITE_API_URL=https://your-backend-domain.com/api
-VITE_APP_NAME=AI Learning Assistant
+---
+
+## Monitoring & Maintenance
+
+### Vercel Monitoring
+- **Dashboard:** https://vercel.com/dashboard
+- **View Logs:** Projects → codenova-frontend → Logs
+- **Deployments:** View each deployment status
+- **Analytics:** View built-in analytics
+
+### Render Monitoring
+- **Dashboard:** https://dashboard.render.com
+- **View Logs:** Services → codenova-backend → Logs
+- **Metrics:** View CPU, memory, request count
+- **Health Check:** Auto-restarts on failure
+- **Redeploy:** Manual redeploy available
+
+### MongoDB Atlas Monitoring
+- **Cluster Status:** https://cloud.mongodb.com/v2
+- **Connection Stats:** View active connections
+- **Backups:** Check automated backup status
+- **Performance:** Monitor query performance
+
+---
+
+## Scaling & Performance
+
+### If Frontend Gets Slow
+```
+Vercel automatically handles scaling:
+- Distributed to global CDN
+- Edge functions for dynamic content
+- Automatic cache invalidation
 ```
 
-## CI/CD Pipeline
-
-**GitHub Actions Example:**
-```yaml
-name: Deploy Monorepo
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build applications
-        run: npm run build
-        
-      - name: Deploy to production
-        run: |
-          # Your deployment commands here
-          npm run deploy:vercel
+### If Backend Gets Slow
+```
+Render Dashboard → Services → codenova-backend:
+1. Go to Settings
+2. Change Instance Type to higher tier
+3. Or add more resources (CPU/RAM)
+4. Service redeploys automatically
 ```
 
-## Monitoring & Scaling
+### If Database Gets Slow
+```
+MongoDB Atlas → Cluster → Metrics:
+1. Review query performance
+2. Consider upgrading to M2 or higher
+3. Add indexes if needed
+```
 
-### Health Checks
-- Client: `GET /`
-- Server: `GET /api/health`
-- Database: MongoDB Atlas monitoring
-
-### Scaling Considerations
-- **Horizontal Scaling**: Use load balancers for multiple server instances
-- **Database Scaling**: MongoDB Atlas auto-scaling
-- **CDN**: Use Cloudflare or AWS CloudFront for static assets
-- **Caching**: Implement Redis for session/data caching
+---
 
 ## Troubleshooting
 
-### Common Issues
-1. **CORS Errors**: Check CORS_ORIGIN environment variable
-2. **Database Connection**: Verify MongoDB URI and network access
-3. **Build Failures**: Ensure all dependencies are installed
-4. **Port Conflicts**: Check if ports 3000/5000 are available
+### Frontend: "Cannot GET /"
+- Check Vercel deployment status
+- Verify build command ran successfully
+- Confirm `dist/` folder contains files
+- Check build logs for errors
 
-### Logs
-```bash
-# Docker logs
-docker-compose logs -f
+### Frontend: API calls return 404
+- Verify VITE_API_URL points to Render backend
+- Check Vercel environment variables
+- Confirm Render backend is running
+- Test backend health endpoint directly
 
-# Heroku logs
-heroku logs --tail -a your-app-name
+### Backend: "Failed to connect to MongoDB"
+- Verify MONGO_URI is correct
+- Check MongoDB user credentials
+- Confirm Render IP is whitelisted in MongoDB
+- Test connection string locally
 
-# Railway logs
-railway logs
-```
+### Backend: "Groq API key not configured"
+- In production: endpoints return 503 (expected)
+- Verify GROQ_API_KEY in Render environment
+- Check key is valid at console.groq.com
+- Ensure no leading/trailing spaces in key
 
-## Performance Optimization
+### Backend: "CORS errors in frontend"
+- Verify CORS_ORIGIN matches frontend URL
+- Check Render environment variables
+- Restart backend service
+- Clear browser cache
 
-### Frontend
-- Enable Vite build optimizations
-- Implement code splitting
-- Use React.lazy for route-based splitting
-- Optimize images and assets
+### Slow Startup
+- Free Render instances spin down after 15 min inactivity
+- First request will take 30-60 seconds
+- Upgrade to Starter+ for always-on service
+- Or use monitoring service to keep alive
 
-### Backend
-- Enable gzip compression
-- Implement response caching
-- Use MongoDB indexes for queries
-- Monitor API response times
+---
 
-### Database
-- Index frequently queried fields
-- Use MongoDB aggregation pipelines
-- Implement connection pooling
-- Regular database maintenance
+## Security Checklist
 
-## Security
+Before Going Live:
 
-### Best Practices
-- Use HTTPS in production
-- Implement rate limiting
-- Validate all inputs
-- Use JWT tokens securely
-- Keep dependencies updated
-- Enable MongoDB authentication
-- Use environment variables for secrets
+- [ ] Groq API key rotated (old key was exposed in git)
+- [ ] MongoDB user password is strong
+- [ ] Render static IP added to MongoDB whitelist
+- [ ] CORS_ORIGIN matches frontend domain
+- [ ] AI_MOCK_MODE is false
+- [ ] All secrets in Vercel/Render environment (not .env files)
+- [ ] No .env files committed to git
+- [ ] JWT_SECRET is random
+- [ ] SESSION_SECRET is random
+- [ ] Frontend doesn't expose any API keys
+- [ ] Backend properly validates inputs
+- [ ] HTTPS enabled (automatic on Vercel/Render)
+- [ ] Health checks passing consistently
+- [ ] Logs show no errors
+
+---
+
+## Environment Variables Reference
+
+### Frontend (Vercel)
+
+| Variable | Required | Example |
+|----------|----------|---------|
+| VITE_API_URL | Yes | https://codenova-backend.onrender.com |
+
+### Backend (Render)
+
+| Variable | Required | Example |
+|----------|----------|---------|
+| NODE_ENV | Yes | production |
+| MONGO_URI | Yes | mongodb+srv://user:pass@cluster.mongodb.net/codenova |
+| GROQ_API_KEY | Yes* | gsk_... |
+| JWT_SECRET | Yes | (random 32+ chars) |
+| SESSION_SECRET | Yes | (random 32+ chars) |
+| CORS_ORIGIN | Yes | https://codenova-frontend.vercel.app |
+| AI_MOCK_MODE | No | false |
+
+*Groq key required for AI features; missing → 503 response
+
+---
+
+## Quick Reference
+
+| Task | Platform | Action |
+|------|----------|--------|
+| Deploy frontend | Vercel | git push → auto-deploys |
+| Deploy backend | Render | git push → auto-deploys |
+| View frontend logs | Vercel | Projects → Logs |
+| View backend logs | Render | Services → Logs |
+| Set env variables | Vercel | Settings → Environment Variables |
+| Set env variables | Render | Environment → Add Variable |
+| Scale frontend | Vercel | Automatic (built-in) |
+| Scale backend | Render | Settings → Instance Type |
+| Check health | Backend | curl /api/health |
+| Update frontend URL | Render | Update CORS_ORIGIN |
+| Update backend URL | Vercel | Update VITE_API_URL |
+
+---
+
+## Support
+
+**Vercel Docs:** https://vercel.com/docs  
+**Render Docs:** https://render.com/docs  
+**MongoDB Docs:** https://docs.mongodb.com/manual/  
+**Groq API Docs:** https://console.groq.com/docs
+
+---
+
+## Summary
+
+**Frontend:** Vercel (automatic deployment from git)  
+**Backend:** Render (automatic deployment from git)  
+**Database:** MongoDB Atlas (cloud-hosted)  
+**Deployment:** No manual steps after initial setup  
+**Scaling:** Automatic for frontend, manual for backend  
+**Cost:** Free tier available for all services

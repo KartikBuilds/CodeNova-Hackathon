@@ -2,32 +2,32 @@
   "version": 2,
   "builds": [
     {
-      "src": "apps/client/package.json",
+      "src": "apps/client/frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist"
       }
     },
     {
-      "src": "apps/server/src/app.js",
+      "src": "server/src/server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "apps/server/src/app.js"
+      "dest": "server/src/server.js"
     },
     {
       "src": "/(.*)",
-      "dest": "apps/client/dist/$1"
+      "dest": "apps/client/frontend/dist/$1"
     }
   ],
   "env": {
     "NODE_ENV": "production"
   },
   "functions": {
-    "apps/server/src/app.js": {
+    "server/src/server.js": {
       "maxDuration": 30
     }
   }
