@@ -1,590 +1,291 @@
+# CodeNova - AI-Powered Learning Assistant
+
+A production-ready web application that uses AI to create personalized learning experiences. CodeNova provides intelligent tutoring, adaptive quizzes, flashcard generation, and document analysis to help learners master new topics effectively.
+
+## Key Features
+
+- **AI Tutor Chat**: 24/7 conversational AI assistant for learning support
+- **Adaptive Quizzes**: AI-generated quizzes that adapt to learner performance
+- **Flashcard Generation**: Automatically generate flashcards from any content
+- **Document Analysis**: Ask questions about uploaded documents (RAG)
+- **Learning Paths**: Personalized learning roadmaps based on goals
+- **Progress Analytics**: Track learning progress and identify knowledge gaps
+- **Voice Support**: Voice input/output for accessible learning
+
+## Technology Stack
+
+**Frontend:**
+- React 19.2.0
+- Vite (build tool)
+- TailwindCSS (styling)
+- React Router v7 (routing)
+- Recharts (analytics)
+
+**Backend:**
+- Node.js + Express
+- MongoDB (database)
+- LangChain (AI orchestration)
+- Groq LLM (AI inference)
+
+**Deployment:**
+- Docker (containerization)
+- Railway (recommended deployment platform)
+- MongoDB Atlas (cloud database)
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+ and npm 9+
+- MongoDB instance (Atlas or self-hosted)
+- Groq API key (free from https://console.groq.com)
+
+### Setup
+
+1. **Clone and install:**
+   ```bash
+   git clone <repository>
+   cd CodeNova-Hackathon
+   npm install
+   ```
+
+2. **Configure environment:**
+   ```bash
+   # Create .env from .env.example
+   cp .env.example .env
+
+   # Edit .env with your values:
+   # - MONGO_URI=<your-mongodb-connection>
+   # - GROQ_API_KEY=<your-groq-api-key>
+   # - JWT_SECRET=<random-string>
+   # - SESSION_SECRET=<random-string>
+   ```
+
+3. **Configure frontend:**
+   ```bash
+   cd apps/client/frontend
+   cp .env.example .env.local
+
+   # Set VITE_API_URL to your backend URL
+   # (default: http://localhost:5000 for local development)
+   ```
+
+4. **Start development:**
+   ```bash
+   # From root directory
+   npm run dev
+
+   # This starts both backend (port 5000) and frontend (port 5173)
+   ```
+
+5. **Build for production:**
+   ```bash
+   npm run build
+   ```
+
+## Environment Variables
+
+### Backend (.env)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NODE_ENV` | Yes | `production` or `development` |
+| `PORT` | No | Server port (default: 5000) |
+| `MONGO_URI` | Yes | MongoDB connection string |
+| `GROQ_API_KEY` | Yes* | Groq API key for AI features |
+| `JWT_SECRET` | Yes | Secret for JWT signing |
+| `SESSION_SECRET` | Yes | Secret for session management |
+| `CORS_ORIGIN` | No | Frontend domain for CORS |
+| `ALLOWED_ORIGINS` | No | Multiple allowed origins (comma-separated) |
+| `AI_MOCK_MODE` | No | Set to `true` for dev/test only to enable mock responses |
+
+*Groq API key is required for AI features. In production mode without it, AI endpoints return 503 Service Unavailable.
 
+### Frontend (.env.local)
 
-<h1 align="center">🎓 AI-Based Personalized Learning Assistant</h1>
-
-<p align="center">
-  <strong>An intelligent, AI-powered learning platform that adapts to your unique learning journey</strong>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version"/>
-  <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg" alt="Node"/>
-  <img src="https://img.shields.io/badge/react-19.2.0-61dafb.svg" alt="React"/>
-  <img src="https://img.shields.io/badge/mongodb-8.0%2B-green.svg" alt="MongoDB"/>
-  <img src="https://img.shields.io/badge/AI-Groq%20LLM-ff6b6b.svg" alt="AI"/>
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"/>
-</p>
-
-<p align="center">
-  <a href="#-features">✨ Features</a> •
-  <a href="#-quick-start">🚀 Quick Start</a> •
-  <a href="#-tech-stack">🛠️ Tech Stack</a> •
-  <a href="#-api-documentation">📚 API Docs</a>
-</p>
-
----
-
-<p align="center">
-  <b>🏆 CodeNova Hackathon Submission</b><br/>
-  <b>Team CodeNova</b> • 
-  <a href="https://github.com/KartikBuilds/CodeNova-Hackathon">📂 Repository</a> •
-  <a href="https://drive.google.com/file/d/175HhEVeIcPUTRGIDcwFVfZM0weOUBda6/view?usp=sharing">🎬 Demo Video</a>
-</p>
-
----
-
-> ⚠️ **Important Note:** This is a **hackathon project** built within a limited timeframe. The application uses **dummy/seeded data** for demonstration purposes. Some features may be incomplete, and certain links or functionalities might not work as expected. This project showcases our concept and technical capabilities rather than a production-ready application.
-
----
-
-## 📖 Table of Contents
-
-| Section | Description |
-|---------|-------------|
-| [🎯 Problem Statement](#-problem-statement) | The challenges we're solving |
-| [💡 Our Solution](#-our-solution) | How we solve them |
-| [✨ Features](#-features) | Complete feature list |
-| [🛠️ Tech Stack](#-tech-stack) | Technologies used |
-| [🚀 Quick Start](#-quick-start) | Setup instructions |
-| [📁 Project Structure](#-project-structure) | Codebase organization |
-| [📚 API Documentation](#-api-documentation) | API endpoints |
-| [🔮 Future Enhancements](#-future-enhancements) | Roadmap |
-| [👥 Team](#-team) | Contributors |
-
----
-
-## 🎯 Problem Statement
-
-<table>
-<tr>
-<td width="50%">
-
-### ❌ Traditional E-Learning Challenges
-
-| Problem | Impact |
-|---------|--------|
-| 📚 One-size-fits-all content | Learners get bored or overwhelmed |
-| 🎯 No adaptive difficulty | Students plateau or give up |
-| 📊 Limited feedback | Knowledge gaps go unidentified |
-| 🤖 No personalized guidance | Expensive tutoring required |
-| 📈 Poor progress tracking | No clear learning path |
-
-</td>
-<td width="50%">
-
-### ✅ Our AI-Powered Solution
-
-| Solution | Benefit |
-|----------|---------|
-| 🧠 AI-generated quizzes | Targets your weak areas |
-| 📈 Adaptive difficulty | Grows with your skills |
-| 📊 Deep analytics | Identifies knowledge gaps |
-| 🤖 24/7 AI tutor | Instant help anytime |
-| 🗺️ Personalized paths | Clear learning journey |
-
-</td>
-</tr>
-</table>
-
----
-
-## 💡 Our Solution
-
-<p align="center">
-  <img src="https://img.shields.io/badge/🧠-AI_Powered-ff6b6b?style=for-the-badge" alt="AI Powered"/>
-  <img src="https://img.shields.io/badge/📊-Analytics-4ecdc4?style=for-the-badge" alt="Analytics"/>
-  <img src="https://img.shields.io/badge/🎯-Personalized-a855f7?style=for-the-badge" alt="Personalized"/>
-  <img src="https://img.shields.io/badge/⚡-Real_Time-f59e0b?style=for-the-badge" alt="Real Time"/>
-</p>
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        🏗️ SYSTEM ARCHITECTURE                          │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│   👤 User                                                               │
-│     │                                                                   │
-│     ▼                                                                   │
-│   ┌─────────────────┐      ┌─────────────────┐      ┌──────────────┐   │
-│   │   🌐 React UI   │ ───▶ │  🚀 Express API │ ───▶ │  🍃 MongoDB  │   │
-│   │   Vite + TW     │ ◀─── │    Node.js      │ ◀─── │    Atlas     │   │
-│   └─────────────────┘      └────────┬────────┘      └──────────────┘   │
-│                                     │                                   │
-│                          ┌──────────┴──────────┐                        │
-│                          ▼                     ▼                        │
-│                    ┌──────────┐          ┌──────────┐                   │
-│                    │  🤖 Groq │          │  🔐 JWT  │                   │
-│                    │   LLM    │          │   Auth   │                   │
-│                    └──────────┘          └──────────┘                   │
-│                          │                                              │
-│                          ▼                                              │
-│   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │                    🧠 AI SERVICES                                │  │
-│   │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌────────────┐ │  │
-│   │  │📝 Quiz Gen  │ │📊 Analysis  │ │📅 Plans     │ │💬 Tutor    │ │  │
-│   │  └─────────────┘ └─────────────┘ └─────────────┘ └────────────┘ │  │
-│   └─────────────────────────────────────────────────────────────────┘  │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-### 🆚 Key Differentiators
-
-| Feature | 🏫 Traditional Platforms | 🚀 Our Solution |
-|---------|--------------------------|-----------------|
-| Quiz Generation | Static question banks | **🤖 AI-generated based on weaknesses** |
-| Difficulty | Manual level selection | **📈 Adaptive based on performance** |
-| Learning Plans | Generic schedules | **🎯 Personalized daily tasks** |
-| Tutoring | Forums or paid sessions | **💬 24/7 AI tutor chat** |
-| Analytics | Basic completion stats | **📊 Deep strength/weakness analysis** |
-
----
-
-## ✨ Features
-
-### 🔐 Authentication & Profiles
-> Secure JWT-based auth with customizable learning profiles
-
-- ✅ Secure registration & login (7-day token expiration)
-- ✅ Customizable user profiles with learning preferences
-- ✅ Profile picture upload (file system or curated assets)
-- ✅ Learning style identification (visual, auditory, reading, kinesthetic)
-
----
-
-### 📚 Course Catalogue
-> 50+ courses across 7 major tech domains with smart pagination
-
-| Domain | Courses |
-|--------|---------|
-| 🌐 Web Development | MERN Stack, React, Vue.js, Angular, Next.js |
-| 📊 Data Science | Python, R, Statistics, Pandas, NumPy |
-| 🤖 Machine Learning | TensorFlow, PyTorch, Deep Learning, NLP |
-| ⚙️ DevOps | Docker, Kubernetes, CI/CD, Jenkins |
-| ☁️ Cloud Computing | AWS, Azure, GCP, Serverless |
-| 📱 Mobile Development | React Native, Flutter, iOS, Android |
-| 🔒 Cybersecurity | Ethical Hacking, Network Security, Cryptography |
-
----
-
-### 🧠 AI-Powered Quiz System
-> Dynamic question generation that adapts to your knowledge gaps
-
-```
-📝 Quiz Generation Flow:
-━━━━━━━━━━━━━━━━━━━━━━━
-User Profile + Weak Areas + Topic
-              ↓
-      🤖 Groq LLM (LangChain)
-              ↓
-      📋 Dynamic MCQ Questions
-              ↓
-      ✅ Real-time Grading
-              ↓
-      📊 Performance Analysis
-```
-
-- ✅ AI-generated questions targeting weak areas
-- ✅ Configurable difficulty (easy/medium/hard)
-- ✅ Detailed explanations for each answer
-- ✅ Instant scoring and feedback
-
----
-
-### 📊 Performance Analytics
-> Comprehensive dashboard with visual insights
-
-- 📈 **KPI Cards**: Total quizzes, Average score, Day streak, Learning time
-- 📉 **Visual Charts**: Score trends, Topic performance (Recharts)
-- 💪 **Strength Analysis**: AI-identified strong areas
-- ⚠️ **Weakness Detection**: Areas needing improvement
-- 🎯 **Recommendations**: Personalized next steps
-
----
-
-### 🎯 Personalized Learning Plans
-> AI-generated study schedules tailored to your goals
-
-```
-📅 Sample 7-Day Plan:
-━━━━━━━━━━━━━━━━━━━━━
-Day 1: Introduction to React Hooks
-├── 📖 Task 1: Read useState documentation (30 min)
-├── 💻 Task 2: Practice basic examples (45 min)
-└── 🛠️ Task 3: Build a counter component (30 min)
-
-Day 2: Advanced Hook Patterns
-├── 📖 Task 1: Learn useEffect lifecycle (30 min)
-...
-```
-
----
-
-### 🤖 AI Tutor Chat
-> 24/7 conversational AI assistant for instant help
-
-- 💬 Natural conversation with context awareness
-- 💻 Code explanation and debugging support
-- 📚 Topic suggestions based on learning path
-- 🔊 Voice input/output support
-- 📝 Persistent conversation history
-
----
-
-### 📄 Document Q&A (RAG)
-> Upload documents and ask questions about their content
-
-- 📤 Upload PDF, TXT, MD files
-- 🔍 AI-powered content analysis
-- ❓ Question-answering on documents
-- 📋 Intelligent summarization
-
----
-
-### 📇 Flashcard System
-> Spaced repetition for effective memorization
-
-- 🗂️ Custom deck creation
-- 🔄 Spaced repetition algorithm
-- ⏰ Due card tracking
-- 📊 Review performance analytics
-
----
-
-## 🛠️ Tech Stack
-
-<table>
-<tr>
-<td valign="top" width="33%">
-
-### 🌐 Frontend
-| Tech | Version |
-|------|---------|
-| ⚛️ React | 19.2.0 |
-| ⚡ Vite | 7.2.5 |
-| 🎨 Tailwind CSS | 3.4.18 |
-| 🛣️ React Router | 7.10.1 |
-| 📡 Axios | 1.13.2 |
-| 📊 Recharts | 3.5.1 |
-
-</td>
-<td valign="top" width="33%">
-
-### 🖥️ Backend
-| Tech | Version |
-|------|---------|
-| 🟢 Node.js | 18+ |
-| 🚀 Express.js | 4.18.2 |
-| 🍃 MongoDB | 8.0+ |
-| 🔗 Mongoose | 8.0.3 |
-| 🔐 JWT | 9.0.2 |
-| 🔒 bcryptjs | 2.4.3 |
-
-</td>
-<td valign="top" width="33%">
-
-### 🤖 AI/ML
-| Tech | Version |
-|------|---------|
-| 🦜 LangChain | 1.1.5 |
-| ⚡ Groq LLM | 1.0.2 |
-| 🧠 AI Models | GPT-oss |
-
-### 🚀 DevOps
-| Tech | Purpose |
-|------|---------|
-| 🐳 Docker | Containers |
-| 🚂 Railway | Deployment |
-| ☁️ MongoDB Atlas | Cloud DB |
-
-</td>
-</tr>
-</table>
-
----
-
-## 🚀 Quick Start
-
-### 📋 Prerequisites
-
-| Requirement | Version | Installation |
-|-------------|---------|--------------|
-| 🟢 Node.js | ≥18.0.0 | [nodejs.org](https://nodejs.org/) |
-| 📦 npm | ≥9.0.0 | Comes with Node.js |
-| 🍃 MongoDB | ≥8.0 | [mongodb.com](https://www.mongodb.com/) |
-| 🔑 Groq API Key | - | [console.groq.com](https://console.groq.com/) |
-
----
-
-### 🔑 Test Credentials
-```
-📧 Email: testuser@gmail.com
-🔐 Password: testuser123
-```
-
----
-
-### 1️⃣ Clone Repository
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_API_URL` | Yes | Backend API base URL (e.g., `http://localhost:5000`) |
+| `VITE_APP_NAME` | No | Application name for UI |
+| `VITE_ENVIRONMENT` | No | `development` or `production` |
+
+## API Endpoints
+
+### Core AI Endpoints
+
+| Method | Endpoint | Purpose | Auth |
+|--------|----------|---------|------|
+| POST | `/api/tutor/chat` | Chat with AI tutor | Optional |
+| POST | `/api/learning/flashcards/generate` | Generate flashcards | Optional |
+| POST | `/api/analysis/document` | Document Q&A (RAG) | Optional |
+| POST | `/api/quiz/generate` | Generate quiz questions | Optional |
+
+### Other Endpoints
+
+See full API documentation in deployment guide.
+
+## Deployment
+
+### Recommended: Railway + MongoDB Atlas
+
+1. **Create Railway project:**
+   ```bash
+   npm install -g @railway/cli
+   railway login
+   railway init
+   ```
+
+2. **Add MongoDB Atlas:**
+   - Visit https://mongodb.com/cloud/atlas
+   - Create free cluster
+   - Get connection string
+
+3. **Set environment variables in Railway:**
+   - `MONGO_URI` - MongoDB connection
+   - `GROQ_API_KEY` - Groq API key
+   - `JWT_SECRET` - Random 32+ character string
+   - `SESSION_SECRET` - Random 32+ character string
+   - `CORS_ORIGIN` - Your frontend domain
+   - `NODE_ENV` - Set to `production`
+   - `AI_MOCK_MODE` - Leave as `false` (default)
+
+4. **Deploy:**
+   ```bash
+   railway up
+   ```
+
+### Docker Deployment
 
 ```bash
-git clone https://github.com/KartikBuilds/CodeNova-Hackathon.git
-cd "AI-based Personalized Learning Assistant"
+# Build image
+docker build -t codenova:latest .
+
+# Run container
+docker run -p 5000:5000 \
+  -e MONGO_URI=<uri> \
+  -e GROQ_API_KEY=<key> \
+  -e JWT_SECRET=<secret> \
+  -e SESSION_SECRET=<secret> \
+  -e NODE_ENV=production \
+  codenova:latest
 ```
 
----
+## Security
 
-### 2️⃣ Backend Setup
+**Important:** This application requires API credentials to function:
+- **Groq API Key** - Stored securely server-side only
+- **MongoDB URI** - Stored securely server-side only
+- **JWT Secret** - Never exposed to client
+
+**All credentials must be:**
+- Set as environment variables (never hardcoded)
+- Stored securely in deployment platform
+- Rotated regularly in production
+
+**Frontend does NOT have access to:**
+- API keys
+- Database credentials
+- Authentication secrets
+
+All AI requests go through the backend, which maintains secure credential isolation.
+
+**Production Safety:**
+- When AI credentials are missing and `AI_MOCK_MODE=false` (default in production), all AI endpoints return 503 Service Unavailable
+- Mock responses are only returned in development mode with `AI_MOCK_MODE=true`
+- All mock responses include `source="mock-fallback"` indicator for transparency
+
+## Troubleshooting
+
+### "Failed to connect to MongoDB"
+- Verify `MONGO_URI` is correct
+- Check MongoDB connection whitelist includes your IP
+- Ensure MongoDB instance is running
+
+### "Groq API key not configured"
+- In production: AI endpoints return 503 Service Unavailable (expected behavior)
+- In development: either set `GROQ_API_KEY` or set `AI_MOCK_MODE=true` for mock responses
+- Verify key is valid at https://console.groq.com
+
+### "CORS error on frontend API calls"
+- Verify `CORS_ORIGIN` or `ALLOWED_ORIGINS` in backend .env
+- Ensure frontend domain matches backend CORS config
+- Check `VITE_API_URL` in frontend .env
+
+### "Frontend build fails"
+- Clear cache: `npm run clean`
+- Reinstall: `npm install`
+- Check Node version: `node -v` (requires 18+)
+
+## Development
+
+### Project Structure
+
+```
+CodeNova-Hackathon/
+├── apps/client/frontend/          # React frontend
+│   ├── src/
+│   │   ├── pages/                # Page components
+│   │   ├── components/           # Reusable components
+│   │   └── api/                  # API client helpers
+│   └── dist/                     # Built output
+├── server/                        # Express backend
+│   ├── src/
+│   │   ├── routes/               # API routes
+│   │   ├── controllers/          # Route handlers
+│   │   ├── services/             # Business logic
+│   │   └── models/               # Database schemas
+│   └── src/server.js             # Entry point
+├── docs/                          # Documentation
+├── .env.example                   # Environment template
+├── package.json                   # Monorepo config
+└── Dockerfile                     # Production build
+
+```
+
+### Available Scripts
 
 ```bash
-# 📂 Navigate to server
-cd server
+# Development
+npm run dev              # Start both frontend and backend
+npm run dev:server       # Start backend only
+npm run dev:client       # Start frontend only
 
-# 📦 Install dependencies
-npm install
+# Production
+npm run build            # Build for production
+npm start                # Start backend in production mode
+
+# Validation
+npm run lint             # Run ESLint on frontend
+npm test                 # Run tests (if available)
+
+# Cleanup
+npm run clean            # Remove build artifacts and node_modules
 ```
 
-**Create `server/.env`:**
-```env
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_super_secret_jwt_key
-JWT_EXPIRE=7d
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
-NODE_ENV=development
-GROQ_API_KEY=your_groq_api_key
-```
+## Contributing
 
-```bash
-# 🚀 Start backend
-npm run dev
-```
-✅ Backend running at `http://localhost:5000`
+CodeNova is deployed to production. For changes:
 
----
+1. Create a feature branch
+2. Implement changes with tests
+3. Ensure builds pass: `npm run build`
+4. Submit pull request for review
+5. Deployment follows code review approval
 
-### 3️⃣ Frontend Setup
+## License
 
-```bash
-# 📂 Navigate to frontend
-cd client/frontend
+MIT License - See LICENSE file for details
 
-# 📦 Install dependencies
-npm install
-```
+## Support
 
-**Create `client/frontend/.env`:**
-```env
-VITE_API_BASE_URL=http://localhost:5000/api
-VITE_GROQ_API_KEY=your_groq_api_key
-```
-
-```bash
-# 🚀 Start frontend
-npm run dev
-```
-✅ Frontend running at `http://localhost:5173`
+For issues or questions:
+1. Check the [Deployment Guide](docs/COMPLETION_REPORT.md)
+2. Review the [Baseline Audit](docs/BASELINE_AUDIT.md)
+3. Check logs: `railway logs` (if on Railway)
+4. Create an issue in the repository
 
 ---
 
-### 4️⃣ Seed Database (Optional)
-
-```bash
-cd server
-npm run seed
-```
-✅ Seeds 50+ courses across all domains
-
----
-
-### 5️⃣ Access Application
-
-1. 🌐 Open `http://localhost:5173`
-2. 📝 Register or use test credentials
-3. 🎉 Start learning!
-
----
-
-## 📁 Project Structure
-
-```
-📂 AI-based Personalized Learning Assistant/
-│
-├── 📂 server/                      # 🖥️ Backend (Node.js + Express)
-│   ├── 📂 src/
-│   │   ├── 📂 config/              # ⚙️ Database & LangChain config
-│   │   ├── 📂 controllers/         # 🎮 Request handlers
-│   │   ├── 📂 models/              # 📊 MongoDB schemas
-│   │   ├── 📂 routes/              # 🛣️ API endpoints
-│   │   ├── 📂 middleware/          # 🔐 Auth middleware
-│   │   ├── 📂 services/            # 🤖 AI services
-│   │   └── 📄 server.js            # 🚀 Entry point
-│   └── 📄 package.json
-│
-├── 📂 client/frontend/             # 🌐 Frontend (React + Vite)
-│   ├── 📂 src/
-│   │   ├── 📂 api/                 # 📡 API client modules
-│   │   ├── 📂 components/          # 🧩 Reusable components
-│   │   ├── 📂 context/             # 🔄 React context providers
-│   │   ├── 📂 pages/               # 📄 Page components
-│   │   ├── 📂 assets/              # 🖼️ Images & screenshots
-│   │   └── 📄 App.jsx              # ⚛️ Root component
-│   └── 📄 package.json
-│
-├── 📂 ai/                          # 🤖 AI prompts & templates
-├── 📄 docker-compose.yml           # 🐳 Docker config
-├── 📄 railway.json                 # 🚂 Railway deployment
-└── 📄 README.md                    # 📖 This file
-```
-
----
-
-## 📚 API Documentation
-
-### 🔐 Authentication
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/auth/register` | 📝 Register new user |
-| `POST` | `/api/auth/login` | 🔑 Login user |
-| `GET` | `/api/auth/me` | 👤 Get current user |
-
-### 📚 Catalogue
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/catalog/domains` | 📂 Get all domains |
-| `GET` | `/api/catalog/courses` | 📚 Get courses (with pagination) |
-| `GET` | `/api/catalog/course/:id` | 📖 Get course details |
-| `GET` | `/api/catalog/module/:id` | 📄 Get module details |
-
-### 🧠 Quiz
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/quiz/generate` | 🤖 Generate AI quiz |
-| `POST` | `/api/quiz/submit` | ✅ Submit quiz answers |
-
-### 📊 Analysis
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/analysis/performance` | 📈 Analyze performance |
-| `GET` | `/api/analysis/trends` | 📉 Get performance trends |
-| `GET` | `/api/analysis/summary` | 📋 Get strengths/weaknesses |
-
-### 📅 Learning
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/learning/path` | 🗺️ Get learning path |
-| `POST` | `/api/learning/plan` | 📅 Create learning plan |
-| `POST` | `/api/learning/path/rebuild` | 🔄 Rebuild learning path |
-
-### 💬 Tutor
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/tutor/chat` | 🤖 Chat with AI tutor |
-| `GET` | `/api/tutor/history` | 📝 Get chat history |
-
-### 📊 Dashboard
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/dashboard/summary` | 📊 Get dashboard summary |
-
----
-
-## 🔮 Future Enhancements
-
-| Feature | Description | Priority |
-|---------|-------------|----------|
-| 🎮 Gamification | Points, badges, leaderboards | 🔴 High |
-| 📹 Video Integration | Embedded course videos | 🔴 High |
-| 👥 Social Learning | Study groups, discussions | 🟡 Medium |
-| 📱 Mobile App | React Native version | 🟡 Medium |
-| 🌍 Multi-language | i18n support | 🟡 Medium |
-| 🔔 Notifications | Push/email reminders | 🟡 Medium |
-| 📊 Advanced Analytics | ML-based predictions | 🟢 Low |
-
----
-
-## 🧪 Testing
-
-### ✅ Quick Test Checklist
-
-- [x] User registration works
-- [x] User login works
-- [x] Protected routes redirect to login
-- [x] Catalogue displays courses with pagination
-- [x] Quiz generation works
-- [x] Quiz submission returns results with AI analysis
-- [x] Dashboard shows analytics with charts
-- [x] Learning plan generates
-- [x] AI tutor responds
-- [x] Profile updates save
-- [x] Document Q&A works
-- [x] Flashcards functional
-
----
-
-## 👥 Team
-
-<table>
-<tr>
-<td align="center">
-<b>Kartik</b><br/>
-<sub>Full Stack Developer</sub><br/>
-<a href="https://github.com/KartikBuilds">@KartikBuilds</a>
-</td>
-<td align="center">
-<b>Tanmay Jare</b><br/>
-<sub>Frontend Developer</sub><br/>
-<a href="https://github.com/TanmayJare">@TanmayJare</a>
-</td>
-<td align="center">
-<b>Shreeya Parkhi</b><br/>
-<sub>Backend Developer</sub><br/>
-<a href="https://github.com/Shreeyaparkhi11">@Shreeyaparkhi11</a>
-</td>
-<td align="center">
-<b>Viraj Gavade</b><br/>
-<sub>AI/ML Engineer</sub><br/>
-<a href="https://github.com/viraj-gavade">@viraj-gavade</a>
-</td>
-</tr>
-</table>
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License**.
-
-© 2025 **Team CodeNova**. All rights reserved.
-
----
-
-## 🙏 Acknowledgements
-
-| Resource | Purpose |
-|----------|---------|
-| [Groq](https://groq.com/) | Ultra-fast LLM inference |
-| [LangChain](https://langchain.com/) | LLM orchestration |
-| [MongoDB](https://mongodb.com/) | Database |
-| [Tailwind CSS](https://tailwindcss.com/) | Styling |
-| [Recharts](https://recharts.org/) | Data visualization |
-| [Railway](https://railway.app/) | Deployment |
-
----
-
-<p align="center">
-  <b>Built by Team CodeNova</b><br/><br/>
-  © 2025 Team CodeNova. All rights reserved.<br/><br/>
-  ⭐ <b>Star this repo if you found it helpful!</b> ⭐
-</p>
-
-<p align="center">
-  <a href="https://github.com/KartikBuilds/CodeNova-Hackathon/issues">🐛 Report Bug</a> •
-  <a href="https://github.com/KartikBuilds/CodeNova-Hackathon/issues">✨ Request Feature</a>
-</p>
+**Status:** Production Ready ✅
+**Last Updated:** 2026-08-29
+**Deployment Platform:** Railway + MongoDB Atlas
+**Support Level:** Community (MIT Licensed)

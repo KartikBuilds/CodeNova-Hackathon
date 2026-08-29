@@ -17,8 +17,35 @@ const isAIAvailable = () => {
   return getGroqLLM() !== null;
 };
 
+// Check if mock mode is explicitly enabled (dev/test only)
+const isMockModeEnabled = () => {
+  return process.env.AI_MOCK_MODE === 'true';
+};
+
+// In production, fail explicitly if AI unavailable (no silent fallback)
+const shouldUseMockFallback = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const mockModeExplicit = isMockModeEnabled();
+
+  if (isProduction && !mockModeExplicit) {
+    // Production: only use fallback if explicitly enabled
+    return false;
+  }
+  // Development: use fallback if AI unavailable and not explicitly disabled
+  return true;
+};
+
 // Mock delay to simulate API call (for fallback)
 const mockDelay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Error for unavailable AI service in production
+class AIServiceUnavailableError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AIServiceUnavailableError';
+    this.status = 503;
+  }
+}
 
 /**
  * Generate a quiz based on topic, difficulty, and learner weaknesses
@@ -32,9 +59,12 @@ const mockDelay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
  */
 export const generateQuiz = async ({ topic, difficulty = 'medium', weaknesses = [], count = 5 }) => {
   const llm = getGroqLLM();
-  
+
   // Fallback to mock if LLM not available
   if (!llm || !isAIAvailable()) {
+    if (!shouldUseMockFallback()) {
+      throw new AIServiceUnavailableError('Groq API key not configured. AI features are unavailable in production mode.');
+    }
     return generateQuizMock({ topic, difficulty, weaknesses, count });
   }
 
@@ -222,8 +252,11 @@ Be encouraging but honest. Provide actionable insights.
  */
 export const createLearningPlan = async (profileJson) => {
   const llm = getGroqLLM();
-  
+
   if (!llm || !isAIAvailable()) {
+    if (!shouldUseMockFallback()) {
+      throw new AIServiceUnavailableError('Groq API key not configured. AI features are unavailable in production mode.');
+    }
     return createLearningPlanMock(profileJson);
   }
 
@@ -390,8 +423,11 @@ Generate {days} days of structured learning. Output valid JSON only.
  */
 export const tutorChat = async (message, context = {}) => {
   const llm = getGroqLLM();
-  
+
   if (!llm || !isAIAvailable()) {
+    if (!shouldUseMockFallback()) {
+      throw new AIServiceUnavailableError('Groq API key not configured. AI features are unavailable in production mode.');
+    }
     return tutorChatMock(message, context);
   }
 
@@ -600,10 +636,201 @@ const tutorChatMock = async (message, context = {}) => {
   };
 };
 
+/**
+ * Generate flashcards from content
+ * @param {Object} params - Generation parameters
+ * @param {string} params.content - The source content/text
+ * @param {number} params.numberOfCards - Number of flashcards to generate
+ * @returns {Promise<Object>} Generated flashcards
+ */
+export const generateFlashcards = async ({ content, numberOfCards = 5 }) => {
+  const llm = getGroqLLM();
+
+  // If LLM not available, decide on fallback behavior
+  if (!llm || !isAIAvailable()) {
+    if (!shouldUseMockFallback()) {
+      throw new AIServiceUnavailableError('Groq API key not configured. AI features are unavailable in production mode.');
+    }
+    return generateFlashcardsMock({ content, numberOfCards });
+  }
+
+  try {
+    if (!content || content.trim().length === 0) {
+      throw new Error('Content cannot be empty');
+    }
+
+    if (numberOfCards < 1 || numberOfCards > 50) {
+      throw new Error('Number of cards must be between 1 and 50');
+    }
+
+    const flashcardPrompt = PromptTemplate.fromTemplate(`
+You are an expert at creating effective flashcards for learning.
+
+From the following content, create exactly {numberOfCards} flashcards.
+
+REQUIREMENTS:
+1. Each flashcard should have a clear question and answer
+2. Questions should be specific and testable
+3. Answers should be concise but complete
+4. Use the Leitner system (spacing repetition) in mind
+5. Front (question) and Back (answer) format
+
+Content:
+---
+{content}
+---
+
+Return ONLY valid JSON with this EXACT structure:
+{{
+  "cards": [
+    {{
+      "id": "card_1",
+      "front": "Question text here?",
+      "back": "Answer text here",
+      "difficulty": "easy|medium|hard",
+      "topic": "extracted topic"
+    }}
+  ]
+}}
+
+Generate {numberOfCards} flashcards now.
+`);
+
+    const formattedPrompt = await flashcardPrompt.format({
+      numberOfCards,
+      content: content.substring(0, 4000) // Limit content to avoid token overload
+    });
+
+    const response = await llm.invoke(formattedPrompt);
+
+    let cardsData;
+    try {
+      cardsData = JSON.parse(response.content);
+    } catch (parseError) {
+      console.error('Failed to parse AI response, using mock data:', parseError);
+      return generateFlashcardsMock({ content, numberOfCards });
+    }
+
+    if (!cardsData.cards || !Array.isArray(cardsData.cards)) {
+      throw new Error('Invalid flashcard structure returned from AI');
+    }
+
+    return {
+      cards: cardsData.cards,
+      count: cardsData.cards.length,
+      createdAt: new Date().toISOString(),
+      source: 'groq-ai'
+    };
+  } catch (error) {
+    console.error('Error generating flashcards:', error);
+    return generateFlashcardsMock({ content, numberOfCards });
+  }
+};
+
+/**
+ * Analyze document and answer questions (RAG)
+ * @param {Object} params - Analysis parameters
+ * @param {string} params.documentContent - The document content
+ * @param {string} params.question - The question to answer
+ * @returns {Promise<Object>} Analysis result
+ */
+export const analyzeDocument = async ({ documentContent, question }) => {
+  const llm = getGroqLLM();
+
+  if (!llm || !isAIAvailable()) {
+    if (!shouldUseMockFallback()) {
+      throw new AIServiceUnavailableError('Groq API key not configured. AI features are unavailable in production mode.');
+    }
+    return analyzeDocumentMock({ documentContent, question });
+  }
+
+  try {
+    if (!documentContent || documentContent.trim().length === 0) {
+      throw new Error('Document content cannot be empty');
+    }
+
+    if (!question || question.trim().length === 0) {
+      throw new Error('Question cannot be empty');
+    }
+
+    const ragPrompt = PromptTemplate.fromTemplate(`
+You are a document analysis assistant. Answer the following question based ONLY on the provided document content.
+
+Document:
+---
+{documentContent}
+---
+
+Question: {question}
+
+INSTRUCTIONS:
+1. Answer based only on information in the document
+2. If the answer is not in the document, clearly state that
+3. Cite specific parts of the document when possible
+4. Be concise and clear
+5. If the question is unclear, ask for clarification
+
+Provide your answer now:
+`);
+
+    const formattedPrompt = await ragPrompt.format({
+      documentContent: documentContent.substring(0, 8000),
+      question: question.substring(0, 1000)
+    });
+
+    const response = await llm.invoke(formattedPrompt);
+
+    return {
+      answer: response.content,
+      question: question,
+      documentLength: documentContent.length,
+      createdAt: new Date().toISOString(),
+      source: 'groq-ai'
+    };
+  } catch (error) {
+    console.error('Error analyzing document:', error);
+    return analyzeDocumentMock({ documentContent, question });
+  }
+};
+
+// Mock implementations
+const generateFlashcardsMock = async ({ content, numberOfCards }) => {
+  await mockDelay(800);
+
+  const sampleCards = [
+    { id: 'card_1', front: 'What is the main topic?', back: 'The content you provided', difficulty: 'easy', topic: 'General' },
+    { id: 'card_2', front: 'Explain a key concept', back: 'A fundamental principle from the content', difficulty: 'medium', topic: 'General' },
+    { id: 'card_3', front: 'How does this apply?', back: 'This concept applies in practical scenarios', difficulty: 'hard', topic: 'General' },
+  ];
+
+  return {
+    cards: sampleCards.slice(0, numberOfCards),
+    count: Math.min(numberOfCards, sampleCards.length),
+    createdAt: new Date().toISOString(),
+    source: 'mock-fallback',
+    note: '[MOCK DATA] Groq API key not configured'
+  };
+};
+
+const analyzeDocumentMock = async ({ documentContent, question }) => {
+  await mockDelay(500);
+
+  return {
+    answer: `Based on the document provided, regarding "${question}": This appears to be an analysis of the content you submitted. The document contains relevant information about the topic you asked about. For a complete answer, please provide more context or a more specific question about the document.`,
+    question: question,
+    documentLength: documentContent.length,
+    createdAt: new Date().toISOString(),
+    source: 'mock-fallback',
+    note: '[MOCK DATA] Groq API key not configured'
+  };
+};
+
 // Export all AI service functions
 export default {
   generateQuiz,
   analyzePerformance,
   createLearningPlan,
-  tutorChat
+  tutorChat,
+  generateFlashcards,
+  analyzeDocument
 };

@@ -2,13 +2,23 @@ import express from 'express';
 import {
   analyzePerformance,
   getPerformanceTrends,
-  getAnalysisSummary
+  getAnalysisSummary,
+  analyzeDocument
 } from '../controllers/analysisController.js';
 import authMiddleware from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// All routes require authentication
+// Public route for document analysis (auth optional)
+router.post('/document', (req, res, next) => {
+  // Optional auth middleware
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    return authMiddleware(req, res, () => analyzeDocument(req, res, next));
+  }
+  analyzeDocument(req, res, next);
+});
+
+// All other routes require authentication
 router.use(authMiddleware);
 
 // POST /api/analysis/performance - Analyze quiz performance

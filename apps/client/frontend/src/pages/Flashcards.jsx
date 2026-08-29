@@ -229,59 +229,51 @@ const Flashcards = () => {
     setError('');
 
     try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/learning/flashcards/generate`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer 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`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai/gpt-oss-120b',
-          temperature: 0.4,
-          max_tokens: 1500,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert instructional designer who creates flashcards using spaced repetition best practices. Always respond with minified JSON only.',
-            },
-            {
-              role: 'user',
-              content: `Create ${numberOfCards} flashcards from the content below. Return strictly valid JSON following this schema:
-{
-  "keyConcepts": ["concept"...],
-  "flashcards": [
-    {
-      "question": "",
-      "answer": "",
-      "concept": "",
-      "difficulty": "beginner | intermediate | advanced",
-      "hint": "optional short recall hint"
-    }
-  ]
-}
-Prioritize concise questions, step-by-step answers, and actionable hints.
-Content title: ${sourceTitle || 'Untitled Resource'}
-Content:\n${sourceText.trim()}`,
-            },
-          ],
+          content: sourceText.trim(),
+          numberOfCards: numberOfCards,
+          saveToDeck: false
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || 'Failed to reach Groq.');
+        throw new Error(errorData.error?.message || 'Failed to generate flashcards.');
       }
 
       const data = await response.json();
-      const raw = data.choices?.[0]?.message?.content;
-      const parsed = sanitizeJSON(raw);
 
-      if (!parsed || !Array.isArray(parsed.flashcards)) {
-        throw new Error('The AI response was incomplete. Try again or request fewer flashcards.');
+      if (!data.success || !Array.isArray(data.data?.cards)) {
+        throw new Error(data.error?.message || 'The AI response was incomplete. Try again or request fewer flashcards.');
       }
 
-      const cards = parsed.flashcards.map((card, index) => createCardModel(card, index, sourceTitle.trim()));
-      const newConcepts = Array.isArray(parsed.keyConcepts) ? parsed.keyConcepts.filter(Boolean) : [];
+      const generatedCards = data.data.cards;
+
+      // Warn user if mock data is being used
+      if (data.data.source === 'mock-fallback') {
+        setError('⚠️ Using demo data (Groq API key not configured). Results are not real AI-generated.');
+      }
+
+      // Transform backend format to frontend format
+      const cards = generatedCards.map((card, index) => ({
+        id: card.id || `flashcard-${Date.now()}-${index}`,
+        front: card.front,
+        back: card.back,
+        concept: card.topic || 'Generated',
+        difficulty: card.difficulty || 'medium',
+        hint: '',
+        nextReviewDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        reviewCount: 0,
+        createdAt: new Date().toISOString()
+      }));
+
+      const newConcepts = [...new Set(generatedCards.map(c => c.topic || 'Generated').filter(Boolean))];
 
       // Save deck to database
       try {

@@ -68,6 +68,16 @@ export const generateQuiz = async (req, res, next) => {
       }
     });
   } catch (error) {
+    // Handle AI service unavailable in production (return 503)
+    if (error.name === 'AIServiceUnavailableError') {
+      return res.status(503).json({
+        success: false,
+        error: {
+          message: error.message,
+          status: 503
+        }
+      });
+    }
     next(error);
   }
 };

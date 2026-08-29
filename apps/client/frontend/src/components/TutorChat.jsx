@@ -124,54 +124,45 @@ const TutorChat = () => {
     }
   };
 
-  const callGroqAPI = async (userMessage, currentMessages) => {
+  const callTutorAPI = async (userMessage, currentMessages) => {
     try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/tutor/chat`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer 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`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai/gpt-oss-120b',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a helpful, patient, and encouraging AI tutor. Your role is to:
-- Explain concepts clearly and simply
-- Answer questions about various subjects (programming, data science, web development, etc.)
-- Provide examples and analogies to help understanding
-- Give study tips and learning strategies
-- Be encouraging and supportive
-- Keep responses concise but informative (2-3 paragraphs max)
-- Use markdown formatting for code snippets when relevant`
-            },
-            ...currentMessages
+          message: userMessage,
+          context: {
+            topic: 'general',
+            history: currentMessages
               .filter(msg => msg.role === 'user' || msg.role === 'assistant')
               .map(msg => ({
                 role: msg.role,
-                content: msg.content
-              })),
-            {
-              role: 'user',
-              content: userMessage
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 1024,
+                message: msg.content
+              }))
+          }
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to get response from AI');
+        throw new Error(errorData.error?.message || 'Failed to get response from AI tutor');
       }
 
       const data = await response.json();
-      return data.choices[0].message.content;
+      if (data.success && data.data) {
+        return {
+          response: data.data.response,
+          source: data.data.source,
+          note: data.data.note
+        };
+      }
+      throw new Error('Invalid response from server');
     } catch (err) {
-      console.error('Groq API Error:', err);
-      throw new Error(err.message || 'Failed to connect to AI. Please check your API key configuration.');
+      console.error('Tutor API Error:', err);
+      throw new Error(err.message || 'Failed to connect to the tutor service. Please try again.');
     }
   };
 
@@ -193,20 +184,25 @@ const TutorChat = () => {
     setError('');
 
     try {
-      const aiResponse = await callGroqAPI(input.trim(), [...messages, userMessage]);
-      
+      const result = await callTutorAPI(input.trim(), [...messages, userMessage]);
+
+      // Warn user if mock data is being used
+      if (result.source === 'mock-fallback') {
+        setError('⚠️ Using demo data (Groq API key not configured). Responses are not real AI.');
+      }
+
       const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: aiResponse,
+        content: result.response,
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-      
+
       // Speak the AI response if voice is enabled
       if (voiceEnabled) {
-        speakText(aiResponse);
+        speakText(result.response);
       }
     } catch (err) {
       setError(err.message);

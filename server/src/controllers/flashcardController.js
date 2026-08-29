@@ -1,4 +1,5 @@
 import FlashcardDeck from '../models/FlashcardDeck.js';
+import aiService from '../services/aiService.js';
 
 // @desc    Get all flashcard decks for user
 // @route   GET /api/learning/flashcards
@@ -277,6 +278,95 @@ export const getCardsDue = async (req, res, next) => {
       }
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Generate flashcards from content
+// @route   POST /api/learning/flashcards/generate
+// @access  Public (auth optional)
+export const generateFlashcards = async (req, res, next) => {
+  try {
+    const { content, numberOfCards = 5, saveToDeck = false, deckName = null } = req.body;
+
+    // Validate content
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Content is required and must be a non-empty string',
+          status: 400
+        }
+      });
+    }
+
+    if (numberOfCards < 1 || numberOfCards > 50) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Number of cards must be between 1 and 50',
+          status: 400
+        }
+      });
+    }
+
+    // Generate flashcards using AI
+    const result = await aiService.generateFlashcards({
+      content: content.trim(),
+      numberOfCards: parseInt(numberOfCards)
+    });
+
+    // If saveToDeck is true and user is authenticated, save to database
+    let deck = null;
+    if (saveToDeck && req.user) {
+      try {
+        const deckData = new FlashcardDeck({
+          userId: req.user.id,
+          name: deckName || `Generated Flashcards - ${new Date().toLocaleDateString()}`,
+          description: `Auto-generated from content on ${new Date().toLocaleString()}`,
+          topic: 'Generated',
+          cards: result.cards.map((card, idx) => ({
+            _id: card.id || `card_${idx}`,
+            front: card.front,
+            back: card.back,
+            difficulty: card.difficulty || 'medium',
+            tags: [card.topic || 'generated']
+          })),
+          metadata: {
+            totalCards: result.cards.length,
+            generatedBy: 'AI',
+            source: 'user-content'
+          }
+        });
+
+        deck = await deckData.save();
+      } catch (dbError) {
+        console.error('Error saving deck to database:', dbError);
+        // Continue without saving to DB, still return generated cards
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        cards: result.cards,
+        count: result.count,
+        savedDeck: deck ? { id: deck._id, name: deck.name } : null,
+        source: result.source,
+        note: result.note || undefined
+      }
+    });
+  } catch (error) {
+    // Handle AI service unavailable in production (return 503)
+    if (error.name === 'AIServiceUnavailableError') {
+      return res.status(503).json({
+        success: false,
+        error: {
+          message: error.message,
+          status: 503
+        }
+      });
+    }
     next(error);
   }
 };

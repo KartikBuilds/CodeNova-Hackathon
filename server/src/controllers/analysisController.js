@@ -135,3 +135,72 @@ export const getAnalysisSummary = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Analyze document and answer questions (RAG)
+// @route   POST /api/analysis/document
+// @access  Public (auth optional)
+export const analyzeDocument = async (req, res, next) => {
+  try {
+    const { documentContent, question } = req.body;
+
+    // Validate inputs
+    if (!documentContent || typeof documentContent !== 'string' || documentContent.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Document content is required and must be a non-empty string',
+          status: 400
+        }
+      });
+    }
+
+    if (!question || typeof question !== 'string' || question.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Question is required and must be a non-empty string',
+          status: 400
+        }
+      });
+    }
+
+    if (documentContent.length > 50000) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Document is too long. Maximum 50,000 characters allowed.',
+          status: 400
+        }
+      });
+    }
+
+    // Analyze document using AI service
+    const result = await aiService.analyzeDocument({
+      documentContent: documentContent.trim(),
+      question: question.trim()
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        answer: result.answer,
+        question: result.question,
+        documentLength: result.documentLength,
+        source: result.source,
+        note: result.note || undefined
+      }
+    });
+  } catch (error) {
+    // Handle AI service unavailable in production (return 503)
+    if (error.name === 'AIServiceUnavailableError') {
+      return res.status(503).json({
+        success: false,
+        error: {
+          message: error.message,
+          status: 503
+        }
+      });
+    }
+    next(error);
+  }
+};

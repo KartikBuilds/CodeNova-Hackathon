@@ -62,10 +62,22 @@ export const chat = async (req, res, next) => {
         response: tutorResponse.message,
         suggestions: tutorResponse.suggestions || [],
         conversationId: tutorResponse.conversationId,
-        timestamp: tutorResponse.timestamp
+        timestamp: tutorResponse.timestamp,
+        source: tutorResponse.source,
+        note: tutorResponse.note || undefined
       }
     });
   } catch (error) {
+    // Handle AI service unavailable in production (return 503)
+    if (error.name === 'AIServiceUnavailableError') {
+      return res.status(503).json({
+        success: false,
+        error: {
+          message: error.message,
+          status: 503
+        }
+      });
+    }
     next(error);
   }
 };

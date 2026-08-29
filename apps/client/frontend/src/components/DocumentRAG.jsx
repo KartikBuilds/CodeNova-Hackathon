@@ -116,55 +116,37 @@ const DocumentRAG = () => {
     }
   };
 
-  const callGroqRAG = async (docContent, userQuestion) => {
+  const callDocumentAnalysisAPI = async (docContent, userQuestion) => {
     try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/analysis/document`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer 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`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'openai/gpt-oss-120b',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a helpful document analysis assistant. Your task is to:
-1. Answer questions about the provided document
-2. Extract key information when asked to summarize
-3. Be accurate and cite specific parts of the document when possible
-4. If information is not in the document, clearly state that
-5. Provide clear, well-structured responses
-
-Document content:
----
-${docContent}
----`
-            },
-            ...messages.map(msg => ({
-              role: msg.role,
-              content: msg.content
-            })),
-            {
-              role: 'user',
-              content: userQuestion
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 1024,
+          documentContent: docContent,
+          question: userQuestion
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to get response');
+        throw new Error(errorData.error?.message || 'Failed to analyze document');
       }
 
       const data = await response.json();
-      return data.choices[0].message.content;
+      if (data.success && data.data) {
+        return {
+          answer: data.data.answer,
+          source: data.data.source,
+          note: data.data.note
+        };
+      }
+      throw new Error('Invalid response from server');
     } catch (err) {
-      console.error('Groq API Error:', err);
-      throw new Error(err.message || 'Failed to connect to AI. Please check your API key.');
+      console.error('Document Analysis API Error:', err);
+      throw new Error(err.message || 'Failed to analyze the document. Please try again.');
     }
   };
 
@@ -195,16 +177,21 @@ ${docContent}
       setMessages((prev) => [...prev, userMessage]);
 
       // Get AI response
-      const aiResponse = await callGroqRAG(selectedDoc.content, question);
+      const result = await callDocumentAnalysisAPI(selectedDoc.content, question);
+
+      // Warn user if mock data is being used
+      if (result.source === 'mock-fallback') {
+        setError('⚠️ Using demo data (Groq API key not configured). Results are not real AI analysis.');
+      }
 
       const assistantMessage = {
         role: 'assistant',
-        content: aiResponse,
+        content: result.answer,
         timestamp: new Date().toLocaleTimeString(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-      setAnswer(aiResponse);
+      setAnswer(result.answer);
       setQuestion('');
     } catch (err) {
       setError(err.message);
@@ -233,7 +220,12 @@ ${docContent}
 
 Format the response clearly with sections.`;
 
-      const response = await callGroqRAG(selectedDoc.content, summaryPrompt);
+      const result = await callDocumentAnalysisAPI(selectedDoc.content, summaryPrompt);
+
+      // Warn user if mock data is being used
+      if (result.source === 'mock-fallback') {
+        setError('⚠️ Using demo data (Groq API key not configured). Results are not real AI analysis.');
+      }
 
       const userMessage = {
         role: 'user',
@@ -243,7 +235,7 @@ Format the response clearly with sections.`;
 
       const assistantMessage = {
         role: 'assistant',
-        content: response,
+        content: result.answer,
         timestamp: new Date().toLocaleTimeString(),
       };
 
