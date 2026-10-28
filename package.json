@@ -24,7 +24,7 @@
     "deploy:vercel": "npm run build && vercel --prod",
     "deploy:railway": "railway up",
     "deploy:render": "npm run build",
-    "seed": "npm run seed --workspace=apps/server"
+    "seed": "npm run seed --workspace=server"
   },
   "dependencies": {
     "nodemon": "^3.1.11"

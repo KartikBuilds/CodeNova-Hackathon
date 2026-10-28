@@ -7,12 +7,9 @@ const connectDB = async () => {
       // useNewUrlParser and useUnifiedTopology are now default
     });
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-    console.log(`Database Name: ${conn.connection.name}`);
-    
+
     // Handle connection events
     mongoose.connection.on('disconnected', () => {
-      console.warn('MongoDB disconnected');
     });
 
     mongoose.connection.on('error', (err) => {

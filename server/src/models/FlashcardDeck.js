@@ -125,7 +125,7 @@ flashcardDeckSchema.index({ userId: 1, isActive: 1 });
 // Update total cards count when cards are modified
 flashcardDeckSchema.pre('save', function (next) {
   this.metadata.totalCards = this.cards.length;
-  
+
   // Calculate average score
   if (this.cards.length > 0) {
     const cardsWithReviews = this.cards.filter(card => card.reviewCount > 0);
@@ -136,7 +136,7 @@ flashcardDeckSchema.pre('save', function (next) {
       this.metadata.averageScore = Math.round(avgScore);
     }
   }
-  
+
   next();
 });
 
@@ -158,7 +158,7 @@ flashcardDeckSchema.methods.updateCardReview = function (cardId, correct) {
   if (card) {
     card.reviewCount += 1;
     card.lastReviewed = new Date();
-    
+
     if (correct) {
       card.correctCount += 1;
       // Increase interval using spaced repetition algorithm
@@ -169,7 +169,7 @@ flashcardDeckSchema.methods.updateCardReview = function (cardId, correct) {
       card.interval = 1;
       card.easeFactor = Math.max(1.3, card.easeFactor - 0.2);
     }
-    
+
     // Calculate next review date
     card.nextReview = new Date(Date.now() + card.interval * 24 * 60 * 60 * 1000);
   }

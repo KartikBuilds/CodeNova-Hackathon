@@ -10,7 +10,7 @@ const FloatingTutor = () => {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
       {/* Tooltip */}
-      <div 
+      <div
         className={`bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-lg transition-all duration-300 ${
           isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'
         }`}
@@ -20,8 +20,8 @@ const FloatingTutor = () => {
       </div>
 
       {/* Button */}
-      <Link 
-        to="/tutor" 
+      <Link
+        to="/tutor"
         className="relative group"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -34,7 +34,7 @@ const FloatingTutor = () => {
       </Link>
 
       {/* Close button */}
-      <button 
+      <button
         className="absolute -top-2 -right-2 w-6 h-6 bg-slate-700 text-white rounded-full text-sm flex items-center justify-center hover:bg-slate-800 transition-colors shadow-md"
         onClick={(e) => {
           e.preventDefault();

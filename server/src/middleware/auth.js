@@ -28,7 +28,7 @@ export const protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+      process.env.JWT_SECRET
     );
 
     // Get user from token

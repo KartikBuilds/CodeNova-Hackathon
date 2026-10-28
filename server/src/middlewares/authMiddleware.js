@@ -28,7 +28,7 @@ const authMiddleware = async (req, res, next) => {
     // Verify JWT using JWT_SECRET
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+      process.env.JWT_SECRET
     );
 
     // Get user from database
@@ -61,7 +61,7 @@ const authMiddleware = async (req, res, next) => {
       id: user._id,
       ...user.toObject()
     };
-    
+
     next();
   } catch (error) {
     // Return 401 if token is invalid

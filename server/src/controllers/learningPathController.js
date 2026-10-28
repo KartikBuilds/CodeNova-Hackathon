@@ -14,7 +14,7 @@ export const getLearningPath = async (req, res, next) => {
       try {
         const UserProfile = (await import('../models/UserProfile.js')).default;
         const userProfile = await UserProfile.findOne({ userId: req.user.id });
-        
+
         if (userProfile && userProfile.primaryDomain) {
           domain = userProfile.primaryDomain;
         } else {
@@ -84,9 +84,8 @@ export const rebuildLearningPath = async (req, res, next) => {
     if (!domain) {
       const UserProfile = (await import('../models/UserProfile.js')).default;
       const userProfile = await UserProfile.findOne({ userId: req.user.id });
-      
-      console.log('User profile:', userProfile); // Debug log
-      
+
+
       if (!userProfile || !userProfile.primaryDomain) {
         return res.status(400).json({
           success: false,
@@ -96,15 +95,14 @@ export const rebuildLearningPath = async (req, res, next) => {
           }
         });
       }
-      
+
       domain = userProfile.primaryDomain;
     }
 
-    console.log('Looking for courses in domain:', domain); // Debug log
 
     // Find all courses in the domain
-    const courses = await Course.find({ 
-      domain: domain.toLowerCase() 
+    const courses = await Course.find({
+      domain: domain.toLowerCase()
     })
       .populate({
         path: 'modules',
@@ -112,7 +110,6 @@ export const rebuildLearningPath = async (req, res, next) => {
         options: { sort: { order: 1 } }
       });
 
-    console.log('Found courses:', courses.length); // Debug log
 
     if (!courses || courses.length === 0) {
       // Try case-insensitive search
@@ -124,7 +121,6 @@ export const rebuildLearningPath = async (req, res, next) => {
         options: { sort: { order: 1 } }
       });
 
-      console.log('Case-insensitive search found:', coursesAnyCase.length); // Debug log
 
       if (!coursesAnyCase || coursesAnyCase.length === 0) {
         return res.status(404).json({
@@ -142,10 +138,10 @@ export const rebuildLearningPath = async (req, res, next) => {
 
     // TODO: AI integration will go here to intelligently select and order modules
     // For now, we'll use a simple strategy: include all modules from all courses
-    
+
     // Collect all modules across all courses
     const allModules = [];
-    
+
     courses.forEach(course => {
       if (course.modules && course.modules.length > 0) {
         course.modules.forEach(module => {
@@ -162,15 +158,15 @@ export const rebuildLearningPath = async (req, res, next) => {
     // Sort modules: beginner courses first, then intermediate, then advanced
     // Within each level, sort by course and module order
     const levelOrder = { 'beginner': 1, 'intermediate': 2, 'advanced': 3 };
-    
+
     allModules.sort((a, b) => {
       const levelDiff = levelOrder[a.courseLevel] - levelOrder[b.courseLevel];
       if (levelDiff !== 0) return levelDiff;
-      
+
       if (a.courseTitle !== b.courseTitle) {
         return a.courseTitle.localeCompare(b.courseTitle);
       }
-      
+
       return a.moduleOrder - b.moduleOrder;
     });
 

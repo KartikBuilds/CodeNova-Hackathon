@@ -11,10 +11,10 @@ import img7 from '../assets/7.jpeg';
 import img8 from '../assets/8.jpeg';
 import img9 from '../assets/9.jpeg';
 
-const ProfileImageSelector = ({ 
-  currentImage, 
-  onImageSelect, 
-  onImageUpload, 
+const ProfileImageSelector = ({
+  currentImage,
+  onImageSelect,
+  onImageUpload,
   showAssetImages = false,
   onToggleAssetImages,
   defaultLetter = 'U'
@@ -81,8 +81,8 @@ const ProfileImageSelector = ({
         {/* File Upload Area */}
         <div
           className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
-            dragOver 
-              ? 'border-indigo-400 bg-indigo-50' 
+            dragOver
+              ? 'border-indigo-400 bg-indigo-50'
               : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
           }`}
           onDrop={handleDrop}

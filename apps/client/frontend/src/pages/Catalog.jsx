@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { catalogAPI } from '../api/catalogAPI';
 import CourseCard from '../components/CourseCard';
 
@@ -28,21 +28,8 @@ const Catalog = () => {
     fetchDomains();
   }, []);
 
-  // Fetch all courses initially
-  useEffect(() => {
-    fetchCourses(1);
-  }, []);
-
-  // Reset to first page when domain changes
-  useEffect(() => {
-    if (selectedDomain !== undefined) {
-      setCurrentPage(1);
-      fetchCourses(1);
-    }
-  }, [selectedDomain]);
-
   // Fetch courses with pagination
-  const fetchCourses = async (page = 1) => {
+  const fetchCourses = useCallback(async (page = 1) => {
     setLoading(true);
     try {
       const params = {
@@ -50,14 +37,14 @@ const Catalog = () => {
         limit: coursesPerPage,
         ...(selectedDomain && { domain: selectedDomain })
       };
-      
-      const response = selectedDomain 
+
+      const response = selectedDomain
         ? await catalogAPI.getCourses(selectedDomain, params)
         : await catalogAPI.getAllCourses(params);
-        
+
       // Extract data from response
       const courses = response.data?.courses || [];
-      
+
       setCourses(courses);
       setTotalPages(response.pages || 1);
       setTotalCourses(response.total || 0);
@@ -69,7 +56,15 @@ const Catalog = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDomain, coursesPerPage]);
+
+  // Runs on mount and whenever the domain changes; resets to the first page
+  useEffect(() => {
+    if (selectedDomain !== undefined) {
+      setCurrentPage(1);
+      fetchCourses(1);
+    }
+  }, [selectedDomain, fetchCourses]);
 
   const handleDomainChange = (e) => {
     const domain = e.target.value;
@@ -112,7 +107,7 @@ const Catalog = () => {
             <p className="text-lg md:text-xl text-indigo-100 mb-8 animate-fadeIn">
               Explore our comprehensive collection of AI-powered courses designed to accelerate your learning journey
             </p>
-            
+
             {/* Stats */}
             <div className="flex flex-wrap justify-center gap-8 mt-12">
               <div className="text-center">
@@ -130,7 +125,7 @@ const Catalog = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Wave Divider */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -162,7 +157,7 @@ const Catalog = () => {
               ))}
             </select>
           </div>
-          
+
           <div className="text-sm text-slate-500">
             Showing <span className="font-semibold text-indigo-600">{courses.length}</span> courses
           </div>
@@ -188,7 +183,7 @@ const Catalog = () => {
               Showing {((currentPage - 1) * coursesPerPage) + 1} - {Math.min(currentPage * coursesPerPage, totalCourses)} of {totalCourses} courses
               {selectedDomain && <span className="ml-2 text-indigo-600">in {selectedDomain}</span>}
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
               {courses.map((course) => (
                 <CourseCard key={course._id || course.id} course={course} />
@@ -216,9 +211,9 @@ const Catalog = () => {
                   {[...Array(totalPages)].map((_, index) => {
                     const page = index + 1;
                     const isCurrentPage = page === currentPage;
-                    const shouldShow = page === 1 || page === totalPages || 
+                    const shouldShow = page === 1 || page === totalPages ||
                                     (page >= currentPage - 2 && page <= currentPage + 2);
-                    
+
                     if (!shouldShow) {
                       if (page === currentPage - 3 || page === currentPage + 3) {
                         return <span key={page} className="px-2 text-slate-400">...</span>;

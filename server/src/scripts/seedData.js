@@ -1314,6 +1314,12 @@ const sampleData = {
 
 // Seed function
 const seedDatabase = async () => {
+  // Seeding deletes the catalog first, so it must never run against production
+  if (process.env.NODE_ENV === 'production') {
+    console.error('Refusing to seed: NODE_ENV is production. Seeding is for development only.');
+    process.exit(1);
+  }
+
   try {
     await connectDB();
 

@@ -35,7 +35,7 @@ const ModuleDetail = () => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     const videoId = match && match[2].length === 11 ? match[2] : null;
-    
+
     if (videoId) {
       return `https://www.youtube.com/embed/${videoId}`;
     }
@@ -97,7 +97,7 @@ const ModuleDetail = () => {
         )}
 
         <h1>{module.title || module.name}</h1>
-        
+
         {module.description && (
           <p className="module-description">{module.description}</p>
         )}
@@ -116,7 +116,7 @@ const ModuleDetail = () => {
 
       <div className="module-content-section">
         <h2>Learning Content</h2>
-        
+
         {module.contentItems && module.contentItems.length > 0 ? (
           <div className="content-items-list">
             {module.contentItems.map((item, index) => (

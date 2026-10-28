@@ -1,15 +1,15 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { ProfileContext } from '../hooks/useProfile';
 import { api } from '../api/apiClient';
-
-const ProfileContext = createContext(null);
 
 export const ProfileProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchProfile = async () => {
+  // Memoised so the effect below can depend on it without refetching on every render
+  const fetchProfile = useCallback(async () => {
     if (!isAuthenticated || !user) {
       setProfile(null);
       return;
@@ -20,13 +20,12 @@ export const ProfileProvider = ({ children }) => {
       const response = await api.get('/profile');
       const profileData = response.data?.data || response.data;
       setProfile(profileData);
-    } catch (err) {
-      console.log('No profile found or error fetching profile:', err);
+    } catch {
       setProfile(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, user]);
 
   const updateProfile = async (profileData) => {
     try {
@@ -49,9 +48,9 @@ export const ProfileProvider = ({ children }) => {
     if (isAuthenticated && user) {
       fetchProfile();
     } else {
-      clearProfile();
+      setProfile(null);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, fetchProfile]);
 
   const value = {
     profile,
@@ -68,12 +67,4 @@ export const ProfileProvider = ({ children }) => {
       {children}
     </ProfileContext.Provider>
   );
-};
-
-export const useProfile = () => {
-  const context = useContext(ProfileContext);
-  if (!context) {
-    throw new Error('useProfile must be used within a ProfileProvider');
-  }
-  return context;
 };

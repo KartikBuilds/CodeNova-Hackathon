@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { dashboardAPI } from '../api/dashboardAPI';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/apiClient';
 import { learningPlansAPI, flashcardsAPI } from '../api/learningAPI';
 
@@ -12,7 +12,6 @@ const DashboardPage = () => {
   const [learningPlans, setLearningPlans] = useState([]);
   const [flashcards, setFlashcards] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -28,14 +27,13 @@ const DashboardPage = () => {
         // First try without domain
         const pathResponse = await api.get('/learning/path');
         const pathData = pathResponse.data?.data?.learningPath || pathResponse.data?.learningPath || pathResponse.data;
-        console.log('Dashboard learning path data (no domain):', pathData);
-        
+
         if (pathData && (pathData.path || pathData.modules || Array.isArray(pathData))) {
           setLearningPath(pathData);
           pathFound = true;
         }
-      } catch (err) {
-        console.log('No learning path found without domain');
+      } catch {
+        // No path without a domain: try the profile's domain next
       }
 
       // If no path found, try with user's primary domain
@@ -44,19 +42,18 @@ const DashboardPage = () => {
           const profileResponse = await api.get('/profile');
           const userProfile = profileResponse.data;
           const primaryDomain = userProfile.primaryDomain;
-          
+
           if (primaryDomain) {
             const pathResponse = await api.get(`/learning/path?domain=${encodeURIComponent(primaryDomain)}`);
             const pathData = pathResponse.data?.data?.learningPath || pathResponse.data?.learningPath || pathResponse.data;
-            console.log('Dashboard learning path data (with domain):', pathData);
-            
+
             if (pathData && (pathData.path || pathData.modules || Array.isArray(pathData))) {
               setLearningPath(pathData);
               pathFound = true;
             }
           }
-        } catch (err) {
-          console.log('No learning path found with domain');
+        } catch {
+          // No path for the profile's domain
         }
       }
 
@@ -69,15 +66,15 @@ const DashboardPage = () => {
         const plansResponse = await learningPlansAPI.getPlans();
         const plansData = plansResponse.data || plansResponse || [];
         setLearningPlans(Array.isArray(plansData) ? plansData : []);
-      } catch (err) {
-        console.log('No learning plans found in database');
+      } catch {
+        // Plans are optional on the dashboard
       }
 
       // Fetch flashcards from database and merge with localStorage
       try {
         const decksResponse = await flashcardsAPI.getDecks();
         const dbDecks = decksResponse.data || decksResponse || [];
-        
+
         // Also get from localStorage for backwards compatibility
         let localCards = [];
         try {
@@ -86,8 +83,8 @@ const DashboardPage = () => {
             const parsed = JSON.parse(savedFlashcards);
             localCards = parsed.flashcards || [];
           }
-        } catch (err) {
-          console.log('No flashcards found in localStorage');
+        } catch {
+          // Missing or corrupt local cache: nothing to merge
         }
 
         // Merge database decks with localStorage cards
@@ -102,8 +99,7 @@ const DashboardPage = () => {
         allFlashcards.push(...localCards);
 
         setFlashcards(allFlashcards);
-      } catch (err) {
-        console.log('Error fetching flashcards:', err);
+      } catch {
         // Fallback to localStorage only
         try {
           const savedFlashcards = localStorage.getItem('ai-learning-flashcards');
@@ -111,8 +107,8 @@ const DashboardPage = () => {
             const parsed = JSON.parse(savedFlashcards);
             setFlashcards(parsed.flashcards || []);
           }
-        } catch (err2) {
-          console.log('No flashcards found anywhere');
+        } catch {
+          // Missing or corrupt local cache: show nothing
         }
       }
     } catch (err) {
@@ -125,11 +121,9 @@ const DashboardPage = () => {
     try {
       const data = await dashboardAPI.getSummary();
       setDashboardData(data);
-      setError('');
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
-      setError('Failed to load dashboard data');
-      
+
       // Set mock data for development
       setDashboardData({
         total_quizzes: 12,
@@ -207,14 +201,14 @@ const DashboardPage = () => {
               <p className="text-indigo-100">Here's your learning progress overview</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link 
-                to="/catalog" 
+              <Link
+                to="/catalog"
                 className="px-5 py-2.5 bg-white text-indigo-600 font-semibold rounded-xl hover:shadow-lg hover:shadow-white/20 transform hover:-translate-y-0.5 transition-all"
               >
                 Browse Courses
               </Link>
-              <Link 
-                to="/plan" 
+              <Link
+                to="/plan"
                 className="px-5 py-2.5 bg-white/10 backdrop-blur text-white font-semibold rounded-xl border border-white/20 hover:bg-white/20 transition-all"
               >
                 Learning Plan
@@ -228,28 +222,28 @@ const DashboardPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 -mt-16 mb-8">
-          <KPICard 
-            icon="📝" 
-            value={total_quizzes} 
-            label="Quizzes Taken" 
+          <KPICard
+            icon="📝"
+            value={total_quizzes}
+            label="Quizzes Taken"
             gradient="bg-blue-100 text-blue-600"
           />
-          <KPICard 
-            icon="🎯" 
-            value={`${avg_score.toFixed(1)}%`} 
-            label="Average Score" 
+          <KPICard
+            icon="🎯"
+            value={`${avg_score.toFixed(1)}%`}
+            label="Average Score"
             gradient="bg-green-100 text-green-600"
           />
-          <KPICard 
-            icon="🔥" 
-            value={learning_streak} 
-            label="Day Streak" 
+          <KPICard
+            icon="🔥"
+            value={learning_streak}
+            label="Day Streak"
             gradient="bg-orange-100 text-orange-600"
           />
-          <KPICard 
-            icon="⏱️" 
-            value={`${total_learning_time}h`} 
-            label="Learning Time" 
+          <KPICard
+            icon="⏱️"
+            value={`${total_learning_time}h`}
+            label="Learning Time"
             gradient="bg-purple-100 text-purple-600"
           />
         </div>
@@ -263,8 +257,8 @@ const DashboardPage = () => {
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={score_history}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fontSize: 12, fill: '#64748b' }}
                     tickFormatter={(value) => {
                       const date = new Date(value);
@@ -272,19 +266,19 @@ const DashboardPage = () => {
                     }}
                   />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'white', 
+                  <Tooltip
+                    contentStyle={{
+                      background: 'white',
                       border: 'none',
                       borderRadius: '12px',
                       boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                       padding: '12px 16px'
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="score" 
-                    stroke="url(#lineGradient)" 
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="url(#lineGradient)"
                     strokeWidth={3}
                     dot={{ fill: '#667eea', strokeWidth: 0, r: 5 }}
                     activeDot={{ r: 7, fill: '#764ba2' }}
@@ -310,18 +304,18 @@ const DashboardPage = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="quiz" tick={{ fontSize: 12, fill: '#64748b' }} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      background: 'white', 
+                  <Tooltip
+                    contentStyle={{
+                      background: 'white',
                       border: 'none',
                       borderRadius: '12px',
                       boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                       padding: '12px 16px'
                     }}
                   />
-                  <Bar 
-                    dataKey="score" 
-                    fill="url(#barGradient)" 
+                  <Bar
+                    dataKey="score"
+                    fill="url(#barGradient)"
                     name="Score (%)"
                     radius={[8, 8, 0, 0]}
                   />
@@ -350,7 +344,7 @@ const DashboardPage = () => {
                 const hasPath = learningPath && (
                   // Direct path array
                   (learningPath.path && Array.isArray(learningPath.path) && learningPath.path.length > 0) ||
-                  // Modules array  
+                  // Modules array
                   (learningPath.modules && Array.isArray(learningPath.modules) && learningPath.modules.length > 0) ||
                   // Direct array
                   (Array.isArray(learningPath) && learningPath.length > 0) ||
@@ -361,19 +355,11 @@ const DashboardPage = () => {
                   // Has valid learning path ID
                   (learningPath._id || learningPath.id)
                 );
-                
-                console.log('Dashboard hasPath check:', {
-                  learningPath,
-                  hasPath,
-                  pathExists: learningPath?.path?.length,
-                  modulesExists: learningPath?.modules?.length,
-                  isArray: Array.isArray(learningPath),
-                  hasId: !!(learningPath?._id || learningPath?.id)
-                });
-                
+
+
                 return (
-                  <Link 
-                    to="/path" 
+                  <Link
+                    to="/path"
                     className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
                   >
                     {hasPath ? 'View Path' : 'Create Path'}
@@ -395,7 +381,7 @@ const DashboardPage = () => {
               if (hasPath) {
                 // Get the actual path array from various possible structures
                 const pathArray = learningPath.path || learningPath.modules || learningPath.topics || (Array.isArray(learningPath) ? learningPath : []);
-                
+
                 return (
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm text-slate-600">
@@ -403,7 +389,7 @@ const DashboardPage = () => {
                       <span>{learningPath.progressPercentage || 0}%</span>
                     </div>
                     <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-gradient-to-r from-indigo-600 to-purple-600 h-2 rounded-full transition-all"
                         style={{ width: `${learningPath.progressPercentage || 0}%` }}
                       />
@@ -414,11 +400,11 @@ const DashboardPage = () => {
                         const module = pathItem.moduleId || pathItem.module || pathItem;
                         const status = pathItem.status || 'not-started';
                         const title = module?.title || module?.name || pathItem?.title || pathItem?.name || `Module ${index + 1}`;
-                        
+
                         return (
                           <div key={index} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
                             <div className={`w-2 h-2 rounded-full ${
-                              status === 'completed' ? 'bg-green-500' : 
+                              status === 'completed' ? 'bg-green-500' :
                               status === 'in-progress' ? 'bg-indigo-500' : 'bg-slate-300'
                             }`}></div>
                             <span className="text-sm text-slate-700 flex-1 line-clamp-1">{title}</span>
@@ -432,8 +418,8 @@ const DashboardPage = () => {
                 return (
                   <div className="text-center py-6">
                     <p className="text-slate-500 text-sm mb-3">No learning path yet</p>
-                    <Link 
-                      to="/path" 
+                    <Link
+                      to="/path"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors"
                     >
                       Create Path
@@ -450,8 +436,8 @@ const DashboardPage = () => {
               <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                 <span className="text-2xl">📋</span> Learning Plans
               </h2>
-              <Link 
-                to="/plan" 
+              <Link
+                to="/plan"
                 className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
               >
                 View All
@@ -474,8 +460,8 @@ const DashboardPage = () => {
             ) : (
               <div className="text-center py-6">
                 <p className="text-slate-500 text-sm mb-3">No learning plans yet</p>
-                <Link 
-                  to="/plan" 
+                <Link
+                  to="/plan"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors"
                 >
                   Create Plan
@@ -490,8 +476,8 @@ const DashboardPage = () => {
               <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                 <span className="text-2xl">🧠</span> Flashcards
               </h2>
-              <Link 
-                to="/flashcards" 
+              <Link
+                to="/flashcards"
                 className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
               >
                 View All
@@ -517,7 +503,7 @@ const DashboardPage = () => {
                       <p className="text-sm text-slate-700 line-clamp-1">{card.question}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex-1 bg-slate-200 rounded-full h-1">
-                          <div 
+                          <div
                             className="bg-indigo-600 h-1 rounded-full"
                             style={{ width: `${card.mastery || 0}%` }}
                           />
@@ -531,8 +517,8 @@ const DashboardPage = () => {
             ) : (
               <div className="text-center py-6">
                 <p className="text-slate-500 text-sm mb-3">No flashcards yet</p>
-                <Link 
-                  to="/flashcards" 
+                <Link
+                  to="/flashcards"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors"
                 >
                   Create Cards
@@ -552,8 +538,8 @@ const DashboardPage = () => {
             {topics_mastered.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {topics_mastered.map((topic, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium border border-green-200"
                   >
                     {topic}
@@ -573,8 +559,8 @@ const DashboardPage = () => {
             {weak_topics.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {weak_topics.map((topic, index) => (
-                  <span 
-                    key={index} 
+                  <span
+                    key={index}
                     className="px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-sm font-medium border border-amber-200"
                   >
                     {topic}
@@ -593,8 +579,8 @@ const DashboardPage = () => {
             <h2 className="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Activity</h2>
             <div className="space-y-3">
               {recent_activity.map((activity, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
                 >
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-sm">
@@ -628,9 +614,9 @@ const DashboardPage = () => {
               { to: '/plan', icon: '🗓️', title: 'Learning Plan', desc: 'View your personalized plan', color: 'from-purple-500 to-pink-600' },
               { to: '/profile', icon: '👤', title: 'Update Profile', desc: 'Manage your preferences', color: 'from-emerald-500 to-teal-600' },
             ].map((action, index) => (
-              <Link 
+              <Link
                 key={index}
-                to={action.to} 
+                to={action.to}
                 className="group bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
               >
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${action.color} flex items-center justify-center text-2xl text-white mb-4 group-hover:scale-110 transition-transform`}>

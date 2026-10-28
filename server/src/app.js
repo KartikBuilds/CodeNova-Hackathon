@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/authRoutes.js';
@@ -12,6 +13,7 @@ import analysisRoutes from './routes/analysisRoutes.js';
 import tutorRoutes from './routes/tutorRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
+import { globalLimiter, authLimiter, llmLimiter } from './middleware/rateLimitMiddleware.js';
 
 // Get current directory (needed for ES modules)
 const __filename = fileURLToPath(import.meta.url);
@@ -19,20 +21,23 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// CORS configuration
+// Behind Railway's proxy; without this every visitor shares the proxy IP's rate-limit bucket
+app.set('trust proxy', 1);
+
+// Default helmet headers: CSP, HSTS (no preload), nosniff, frame and referrer policies
+app.use(helmet());
+
+// Comma-separated origins from ALLOWED_ORIGINS; no wildcard fallback
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:5000')
+  .split(',')
+  .map((origin) => origin.trim());
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
-console.log('CORS configuration:', {
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-});
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -51,12 +56,22 @@ app.get('/api/health', (req, res) => {
 // API Routes
 // ===========================
 
+// Rate limits sit after /api/health (health checks must never 429) and cover only /api, not static assets
+app.use('/api', globalLimiter);
+app.post('/api/auth/register', authLimiter);
+app.post('/api/auth/login', authLimiter);
+app.post('/api/quiz/generate', llmLimiter);
+app.post('/api/tutor/chat', llmLimiter);
+app.post('/api/tutor/conversation', llmLimiter);
+app.post('/api/analysis/document', llmLimiter);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/profile', profileRoutes);
+// Flashcards must precede the two routers below: they apply auth to everything under /api/learning
+app.use('/api/learning/flashcards', flashcardRoutes);
 app.use('/api/learning', learningPathRoutes);
 app.use('/api/learning', learningPlanRoutes); // Merged with learning path routes
-app.use('/api/learning/flashcards', flashcardRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/tutor', tutorRoutes);
@@ -77,7 +92,7 @@ app.get(/^(?!\/api\/).*/, (req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return next();
   }
-  
+
   const indexPath = path.join(frontendDistPath, 'index.html');
   res.sendFile(indexPath, (err) => {
     if (err) {

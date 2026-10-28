@@ -8,7 +8,6 @@ export const initializeGroq = () => {
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey || apiKey === 'your_groq_api_key_here') {
-    console.warn('⚠️  GROQ_API_KEY not configured. AI features will use mock data.');
     return null;
   }
 
@@ -20,7 +19,6 @@ export const initializeGroq = () => {
       maxTokens: 2048, // Sufficient for most responses
     });
 
-    console.log('✅ Groq LLM initialized successfully');
     return llm;
   } catch (error) {
     console.error('❌ Failed to initialize Groq LLM:', error.message);
@@ -45,22 +43,22 @@ export const getGroqLLM = () => {
  */
 export const testGroqConnection = async () => {
   const llm = getGroqLLM();
-  
+
   if (!llm) {
     return { success: false, error: 'Groq API key not configured' };
   }
 
   try {
     const response = await llm.invoke('Say "Hello" if you can hear me.');
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: 'Groq connection successful',
-      response: response.content 
+      response: response.content
     };
   } catch (error) {
-    return { 
-      success: false, 
-      error: error.message 
+    return {
+      success: false,
+      error: error.message
     };
   }
 };

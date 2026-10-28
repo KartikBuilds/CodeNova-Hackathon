@@ -35,100 +35,100 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/" element={<Navigate to="/catalog" replace />} />
-              
+
               {/* Public catalog route */}
               <Route path="/catalog" element={<Catalog />} />
-              
+
               {/* Protected routes */}
-              <Route 
-                path="/course/:id" 
+              <Route
+                path="/course/:id"
                 element={
                   <PrivateRoute>
                     <CourseDetail />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/module/:id" 
+              <Route
+                path="/module/:id"
                 element={
                   <PrivateRoute>
                     <ModuleDetail />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/quiz/:moduleId" 
+              <Route
+                path="/quiz/:moduleId"
                 element={
                   <PrivateRoute>
                     <QuizPage />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/dashboard" 
+              <Route
+                path="/dashboard"
                 element={
                   <PrivateRoute>
                     <DashboardPage />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/plan" 
+              <Route
+                path="/plan"
                 element={
                   <PrivateRoute>
                     <AllLearningPlansPage />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/plan/single" 
+              <Route
+                path="/plan/single"
                 element={
                   <PrivateRoute>
                     <LearningPlanPage />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/path" 
+              <Route
+                path="/path"
                 element={
                   <PrivateRoute>
                     <LearningPath />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/profile" 
+              <Route
+                path="/profile"
                 element={
                   <PrivateRoute>
                     <Profile />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/flashcards" 
+              <Route
+                path="/flashcards"
                 element={
                   <PrivateRoute>
                     <Flashcards />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/tutor" 
+              <Route
+                path="/tutor"
                 element={
                   <PrivateRoute>
                     <TutorChat />
                   </PrivateRoute>
-                } 
+                }
               />
-              <Route 
-                path="/rag" 
+              <Route
+                path="/rag"
                 element={
                   <PrivateRoute>
                     <DocumentRAG />
                   </PrivateRoute>
-                } 
+                }
               />
-              
+
               {/* Catch all - redirect to catalog */}
               <Route path="*" element={<Navigate to="/catalog" replace />} />
             </Routes>

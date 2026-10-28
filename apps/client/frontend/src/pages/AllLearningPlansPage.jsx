@@ -81,19 +81,19 @@ const AllLearningPlansPage = () => {
 
   const generateNewPlan = async (e) => {
     if (e) e.preventDefault();
-    
+
     setGenerating(true);
     setError('');
-    
+
     try {
       // Get user profile for additional context
       let profileTopic = config.topic;
-      
+
       if (!profileTopic) {
         try {
           const profile = await profileAPI.getProfile();
           profileTopic = profile.primaryDomain || 'Web Development';
-        } catch (err) {
+        } catch {
           profileTopic = 'Web Development'; // Default
         }
       }
@@ -101,13 +101,13 @@ const AllLearningPlansPage = () => {
       // Try to get strengths/weaknesses from analysis
       let strengths = [];
       let weaknesses = [];
-      
+
       try {
         const analysis = await analysisAPI.getStrengthsWeaknesses();
         strengths = analysis.strengths || [];
         weaknesses = analysis.weaknesses || [];
-      } catch (err) {
-        console.log('No analysis found');
+      } catch {
+        // No analysis yet: the plan is generated without it
       }
 
       // Generate plan using createPlan API
@@ -123,7 +123,7 @@ const AllLearningPlansPage = () => {
 
       // Refresh the plans list to get the newly created plan
       await loadAllPlans();
-      
+
       // The response should contain the saved plan
       if (planData && planData.learningPlan) {
         setSelectedPlan(planData.learningPlan);
@@ -168,7 +168,7 @@ const AllLearningPlansPage = () => {
                 <h1 className="text-3xl md:text-4xl font-bold mb-2">Learning Plans</h1>
                 <p className="text-indigo-100">Your personalized AI-generated learning paths</p>
               </div>
-              <button 
+              <button
                 onClick={showCreateForm}
                 className="px-6 py-3 bg-white text-indigo-600 font-semibold rounded-xl hover:shadow-lg hover:shadow-white/20 transform hover:-translate-y-0.5 transition-all"
               >
@@ -187,7 +187,7 @@ const AllLearningPlansPage = () => {
           ) : error ? (
             <div className="text-center py-12">
               <div className="text-red-600 mb-4">{error}</div>
-              <button 
+              <button
                 onClick={loadAllPlans}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
               >
@@ -201,7 +201,7 @@ const AllLearningPlansPage = () => {
               </div>
               <h3 className="text-xl font-semibold text-slate-800 mb-2">No Learning Plans Yet</h3>
               <p className="text-slate-600 mb-6">Create your first personalized learning plan to get started!</p>
-              <button 
+              <button
                 onClick={showCreateForm}
                 className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
               >
@@ -214,9 +214,9 @@ const AllLearningPlansPage = () => {
                 const duration = plan.duration || `${plan.metadata?.estimatedHours || 0} hours`;
                 const difficulty = plan.metadata?.difficulty || 'medium';
                 const progress = plan.progress?.progressPercentage || 0;
-                
+
                 return (
-                  <div 
+                  <div
                     key={plan._id || index}
                     className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hover:shadow-lg hover:border-indigo-200 transition-all cursor-pointer group"
                     onClick={() => viewPlanDetails(plan)}
@@ -262,7 +262,7 @@ const AllLearningPlansPage = () => {
                           <span className="text-sm font-medium text-slate-800">{progress}%</span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-2">
-                          <div 
+                          <div
                             className="bg-gradient-to-r from-indigo-600 to-purple-600 h-2 rounded-full transition-all"
                             style={{ width: `${progress}%` }}
                           />
@@ -292,7 +292,7 @@ const AllLearningPlansPage = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
             <div className="p-6 border-b border-slate-200">
-              <button 
+              <button
                 onClick={backToList}
                 className="flex items-center gap-2 text-slate-600 hover:text-slate-800 mb-4 transition-colors"
               >
@@ -304,7 +304,7 @@ const AllLearningPlansPage = () => {
               <h2 className="text-2xl font-bold text-slate-900">🎯 Generate Your Learning Plan</h2>
               <p className="text-slate-600 mt-2">Tell us about your learning goals and we'll create a personalized plan just for you!</p>
             </div>
-            
+
             <form onSubmit={generateNewPlan} className="p-6 space-y-6">
               <div>
                 <label htmlFor="topic" className="block text-sm font-medium text-slate-700 mb-2">Learning Topic *</label>
@@ -440,7 +440,7 @@ const AllLearningPlansPage = () => {
     // Handle different plan structures
     const planData = selectedPlan.plan || selectedPlan;
     let days = [];
-    
+
     // Try different possible structures
     if (Array.isArray(planData)) {
       days = planData;
@@ -451,7 +451,7 @@ const AllLearningPlansPage = () => {
     } else if (planData.schedule && Array.isArray(planData.schedule)) {
       days = planData.schedule;
     }
-    
+
     const planTopic = selectedPlan.domain || selectedPlan.title || planData.domain || 'Learning Plan';
     const totalDays = selectedPlan.duration || days.length;
     const hoursPerDay = selectedPlan.metadata?.hoursPerDay || planData.estimatedHoursPerDay || 0;
@@ -461,7 +461,7 @@ const AllLearningPlansPage = () => {
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <button 
+            <button
               onClick={backToList}
               className="flex items-center gap-2 text-indigo-100 hover:text-white mb-6 transition-colors"
             >
@@ -474,7 +474,7 @@ const AllLearningPlansPage = () => {
             <p className="text-indigo-100 mb-4">
               {selectedPlan.description || 'A personalized learning plan tailored to your needs'}
             </p>
-            
+
             <div className="flex flex-wrap gap-4">
               <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
                 📅 {totalDays}
@@ -563,9 +563,9 @@ const AllLearningPlansPage = () => {
                               {typeof resource === 'string' ? (
                                 resource
                               ) : (
-                                <a 
-                                  href={resource.url} 
-                                  target="_blank" 
+                                <a
+                                  href={resource.url}
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-indigo-600 hover:text-indigo-700 underline"
                                 >
@@ -588,7 +588,7 @@ const AllLearningPlansPage = () => {
           )}
 
           <div className="flex justify-center mt-8">
-            <button 
+            <button
               onClick={() => navigate('/dashboard')}
               className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
             >

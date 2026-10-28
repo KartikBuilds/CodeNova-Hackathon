@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import { catalogAPI } from '../api/catalogAPI';
 import { quizAPI, analysisAPI } from '../api/quizAPI';
 import Toast from '../components/Toast';
@@ -8,8 +8,7 @@ import './QuizPage.css';
 const QuizPage = () => {
   const { moduleId } = useParams();
   const location = useLocation();
-  const navigate = useNavigate();
-  
+
   const [module, setModule] = useState(null);
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -37,9 +36,9 @@ const QuizPage = () => {
         setModule(fetchedModule);
 
         // Get topic from location state or module data
-        const topic = location.state?.topic || 
-                      fetchedModule.topic || 
-                      fetchedModule.title || 
+        const topic = location.state?.topic ||
+                      fetchedModule.topic ||
+                      fetchedModule.title ||
                       fetchedModule.name;
 
         // Generate quiz using backend AI service
@@ -99,7 +98,7 @@ const QuizPage = () => {
       showToast('Quiz submitted successfully!', 'success');
 
       // STEP 3: Run AI analysis on performance
-      await analyzePerformance(questions, resultData);
+      await analyzePerformance(questions);
 
     } catch (err) {
       console.error('Error submitting quiz:', err);
@@ -110,7 +109,7 @@ const QuizPage = () => {
     }
   };
 
-  const analyzePerformance = async (questions, quizResult) => {
+  const analyzePerformance = async (questions) => {
     try {
       // Prepare data for AI analysis
       const performanceData = {
@@ -139,7 +138,7 @@ const QuizPage = () => {
     setResult(null);
     setAnalysis(null);
     setError('');
-    
+
     // Reload to generate new quiz
     window.location.reload();
   };
@@ -194,7 +193,7 @@ const QuizPage = () => {
           {analysis && (
             <div className="analysis-section">
               <h2>Performance Analysis</h2>
-              
+
               {analysis.strengths && analysis.strengths.length > 0 && (
                 <div className="analysis-card strengths">
                   <h3>✓ Strengths</h3>
@@ -373,7 +372,7 @@ const QuizPage = () => {
                     </span>
                   </div>
                   <p className="question-text">{question.question || question.text}</p>
-                  
+
                   <div className="answer-review">
                     <div className="answer-item">
                       <strong>Your answer:</strong>
@@ -401,7 +400,7 @@ const QuizPage = () => {
           {analysis && (
             <div className="performance-analysis">
               <h2>Performance Analysis</h2>
-              
+
               {analysis.strengths && analysis.strengths.length > 0 && (
                 <div className="analysis-section strengths">
                   <h3>💪 Strengths</h3>

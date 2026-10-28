@@ -41,9 +41,9 @@ npm run build
 ```
 
 ## Environment Setup
-1. Copy `.env.example` to `apps/server/.env`
-2. Configure MongoDB URI and JWT secret
-3. Update CORS origin for production
+1. Copy `server/.env.example` to `server/.env`
+2. Set `MONGO_URI`, `JWT_SECRET` and `GROQ_API_KEY`
+3. Set `ALLOWED_ORIGINS` to your frontend origin for production
 
 ## Monorepo Commands
 - `npm run build` - Build all apps

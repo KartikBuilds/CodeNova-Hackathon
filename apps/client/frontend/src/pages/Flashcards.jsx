@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { flashcardsAPI } from '../api/learningAPI';
+import apiClient from '../api/apiClient';
 
 const STORAGE_KEY = 'ai-learning-flashcards';
 const HOUR_MS = 1000 * 60 * 60;
@@ -8,65 +9,6 @@ const DAY_MS = HOUR_MS * 24;
 const defaultDeckState = {
   flashcards: [],
   keyConcepts: [],
-};
-
-const sanitizeJSON = (raw) => {
-  if (!raw) return null;
-  const cleaned = raw.replace(/```json|```/gi, '').trim();
-
-  const tryParse = (text) => {
-    try {
-      return JSON.parse(text);
-    } catch (err) {
-      return null;
-    }
-  };
-
-  const direct = tryParse(cleaned);
-  if (direct) {
-    return direct;
-  }
-
-  // Attempt to recover from truncated payloads by dropping the last incomplete card
-  const recoveryTarget = cleaned.lastIndexOf('{"question"');
-  if (recoveryTarget !== -1) {
-    let truncated = cleaned.slice(0, recoveryTarget).replace(/,\s*$/, '');
-    const trimmed = truncated.trimEnd();
-    if (!trimmed.endsWith(']')) {
-      truncated = `${truncated}]`;
-    }
-    const secondTrim = truncated.trimEnd();
-    const repaired = secondTrim.endsWith('}') ? truncated : `${truncated}}`;
-    const parsed = tryParse(repaired);
-    if (parsed) {
-      console.warn('Recovered truncated flashcard payload from Groq. Final card was discarded.');
-      return parsed;
-    }
-  }
-
-  console.error('Failed to parse Groq response', cleaned);
-  return null;
-};
-
-const createCardModel = (card, index, sourceTitle) => {
-  const now = Date.now();
-  return {
-    id: `${now}-${index}`,
-    question: card.question?.trim() || 'Untitled question',
-    answer: card.answer?.trim() || 'Answer unavailable',
-    hint: card.hint?.trim() || '',
-    concept: card.concept?.trim() || card.topic?.trim() || '',
-    difficulty: card.difficulty?.toLowerCase() || 'medium',
-    mastery: 0,
-    repetitions: 0,
-    interval: 1,
-    easiness: 2.5,
-    nextReview: now,
-    createdAt: now,
-    lastReviewed: null,
-    reviewHistory: [],
-    sourceTitle,
-  };
 };
 
 const updateSchedule = (card, grade) => {
@@ -156,11 +98,11 @@ const Flashcards = () => {
     try {
       const response = await flashcardsAPI.getDecks();
       const decks = response.data || response || [];
-      
+
       if (Array.isArray(decks) && decks.length > 0) {
         const allCards = [];
         const allConcepts = [];
-        
+
         decks.forEach(deck => {
           if (deck.flashcards && Array.isArray(deck.flashcards)) {
             allCards.push(...deck.flashcards);
@@ -169,13 +111,13 @@ const Flashcards = () => {
             allConcepts.push(...deck.keyConcepts);
           }
         });
-        
+
         setFlashcards(allCards);
         setKeyConcepts([...new Set(allConcepts)]); // Remove duplicates
         return; // Successfully loaded from database
       }
-    } catch (err) {
-      console.log('No flashcard decks found in database, checking localStorage');
+    } catch {
+      // Database unavailable: fall back to local storage
     }
 
     // Fallback to localStorage
@@ -229,25 +171,11 @@ const Flashcards = () => {
     setError('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiUrl}/api/learning/flashcards/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content: sourceText.trim(),
-          numberOfCards: numberOfCards,
-          saveToDeck: false
-        }),
+      const { data } = await apiClient.post('/learning/flashcards/generate', {
+        content: sourceText.trim(),
+        numberOfCards: numberOfCards,
+        saveToDeck: false
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || 'Failed to generate flashcards.');
-      }
-
-      const data = await response.json();
 
       if (!data.success || !Array.isArray(data.data?.cards)) {
         throw new Error(data.error?.message || 'The AI response was incomplete. Try again or request fewer flashcards.');
@@ -285,9 +213,8 @@ const Flashcards = () => {
           flashcards: cards,
           createdAt: new Date().toISOString()
         };
-        
-        const savedDeck = await flashcardsAPI.createDeck(deckData);
-        console.log('Flashcard deck saved to database:', savedDeck);
+
+        await flashcardsAPI.createDeck(deckData);
       } catch (saveErr) {
         console.error('Failed to save flashcard deck to database:', saveErr);
         // Continue anyway - user still sees the flashcards
@@ -312,7 +239,7 @@ const Flashcards = () => {
       setShowAnswer(false);
     } catch (err) {
       console.error('Flashcard generation failed', err);
-      setError(err.message || 'Generation failed. Try again.');
+      setError(err.response?.data?.error?.message || err.message || 'Generation failed. Try again.');
     } finally {
       setLoading(false);
     }

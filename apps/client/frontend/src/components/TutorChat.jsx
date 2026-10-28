@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import apiClient from '../api/apiClient';
 
 const TutorChat = () => {
   const [messages, setMessages] = useState([
@@ -29,6 +30,7 @@ const TutorChat = () => {
 
   // Initialize Speech Recognition
   useEffect(() => {
+    const synth = synthRef.current;
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
@@ -74,8 +76,8 @@ const TutorChat = () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
-      if (synthRef.current) {
-        synthRef.current.cancel();
+      if (synth) {
+        synth.cancel();
       }
     };
   }, []);
@@ -108,7 +110,7 @@ const TutorChat = () => {
     utterance.rate = 0.9;
     utterance.pitch = 1;
     utterance.volume = 1;
-    
+
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
@@ -126,32 +128,19 @@ const TutorChat = () => {
 
   const callTutorAPI = async (userMessage, currentMessages) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiUrl}/api/tutor/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          context: {
-            topic: 'general',
-            history: currentMessages
-              .filter(msg => msg.role === 'user' || msg.role === 'assistant')
-              .map(msg => ({
-                role: msg.role,
-                message: msg.content
-              }))
-          }
-        }),
+      const { data } = await apiClient.post('/tutor/chat', {
+        message: userMessage,
+        context: {
+          topic: 'general',
+          history: currentMessages
+            .filter(msg => msg.role === 'user' || msg.role === 'assistant')
+            .map(msg => ({
+              role: msg.role,
+              message: msg.content
+            }))
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to get response from AI tutor');
-      }
-
-      const data = await response.json();
       if (data.success && data.data) {
         return {
           response: data.data.response,
@@ -162,13 +151,13 @@ const TutorChat = () => {
       throw new Error('Invalid response from server');
     } catch (err) {
       console.error('Tutor API Error:', err);
-      throw new Error(err.message || 'Failed to connect to the tutor service. Please try again.');
+      throw new Error(err.response?.data?.error?.message || err.message || 'Failed to connect to the tutor service. Please try again.');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!input.trim()) return;
 
     const userMessage = {
@@ -245,8 +234,8 @@ const TutorChat = () => {
                   if (voiceEnabled) stopSpeaking();
                 }}
                 className={`p-2.5 rounded-xl transition-all ${
-                  voiceEnabled 
-                    ? 'bg-white/10 backdrop-blur hover:bg-white/20' 
+                  voiceEnabled
+                    ? 'bg-white/10 backdrop-blur hover:bg-white/20'
                     : 'bg-white/5 backdrop-blur opacity-50'
                 }`}
                 title={voiceEnabled ? 'Voice responses enabled' : 'Voice responses disabled'}
@@ -259,10 +248,10 @@ const TutorChat = () => {
                   )}
                 </svg>
               </button>
-              
+
               {/* Clear Chat Button */}
-              <button 
-                onClick={clearChat} 
+              <button
+                onClick={clearChat}
                 className="px-4 py-2 bg-white/10 backdrop-blur rounded-xl text-white hover:bg-white/20 transition-all flex items-center gap-2"
                 title="Clear chat"
               >
@@ -287,7 +276,7 @@ const TutorChat = () => {
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
               >
                 <div className={`max-w-[80%] ${message.role === 'user' ? 'order-1' : 'order-2'}`}>
-                  <div 
+                  <div
                     className={`px-4 py-3 rounded-2xl ${
                       message.role === 'user'
                         ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-br-md'
@@ -302,7 +291,7 @@ const TutorChat = () => {
                 </div>
               </div>
             ))}
-            
+
             {/* Loading */}
             {loading && (
               <div className="flex justify-start animate-fadeIn">
@@ -315,7 +304,7 @@ const TutorChat = () => {
                 </div>
               </div>
             )}
-            
+
             {/* Error */}
             {error && (
               <div className="flex justify-center animate-fadeIn">
@@ -327,7 +316,7 @@ const TutorChat = () => {
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -353,7 +342,7 @@ const TutorChat = () => {
                 </button>
               </div>
             )}
-            
+
             {/* Listening Indicator */}
             {isListening && (
               <div className="mb-3 px-4 py-2 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2 animate-fadeIn">
@@ -368,7 +357,7 @@ const TutorChat = () => {
                 </button>
               </div>
             )}
-            
+
             <div className="flex gap-2">
               {/* Voice Input Button */}
               <button
@@ -386,7 +375,7 @@ const TutorChat = () => {
                   <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
                 </svg>
               </button>
-              
+
               {/* Text Input */}
               <input
                 type="text"
@@ -396,11 +385,11 @@ const TutorChat = () => {
                 disabled={loading || isListening}
                 className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50"
               />
-              
+
               {/* Send Button */}
-              <button 
-                type="submit" 
-                disabled={loading || !input.trim() || isListening} 
+              <button
+                type="submit"
+                disabled={loading || !input.trim() || isListening}
                 className="px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-xl hover:shadow-lg hover:shadow-indigo-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 {loading ? (
@@ -415,7 +404,7 @@ const TutorChat = () => {
                 )}
               </button>
             </div>
-            
+
             {/* Browser Support Notice */}
             {!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) && (
               <p className="mt-2 text-xs text-slate-500 text-center">

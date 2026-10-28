@@ -87,12 +87,12 @@ export const generateQuiz = async (req, res, next) => {
 // @access  Private
 export const submitQuiz = async (req, res, next) => {
   try {
-    const { 
-      quizId, 
-      moduleId, 
-      topic, 
-      answers, 
-      original_questions 
+    const {
+      quizId,
+      moduleId,
+      topic,
+      answers,
+      original_questions
     } = req.body;
 
     // Validate required fields
@@ -235,7 +235,8 @@ export const getQuizHistory = async (req, res, next) => {
     }
 
     if (topic) {
-      filter.topic = { $regex: topic, $options: 'i' };
+      // Escape user input so it matches literally and cannot inject regex syntax
+      filter.topic = { $regex: String(topic).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
     }
 
     // Calculate pagination

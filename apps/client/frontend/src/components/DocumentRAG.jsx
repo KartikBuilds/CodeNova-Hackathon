@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import './DocumentRAG.css';
+import apiClient from '../api/apiClient';
 
 const DocumentRAG = () => {
   const [documents, setDocuments] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
+  const [, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [messages, setMessages] = useState([]);
@@ -24,20 +25,14 @@ const DocumentRAG = () => {
   // Extract text from PDF using simple approach
   const extractTextFromFile = async (file) => {
     return new Promise((resolve, reject) => {
-      console.log(`[extractTextFromFile] Starting for ${file.name}`);
-      
+
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
         try {
-          console.log(`[extractTextFromFile] onload triggered for ${file.name}`);
           const text = e.target.result;
-          console.log(`[extractTextFromFile] Text extracted: ${text?.length || 0} characters`);
-          
-          if (!text || text.length === 0) {
-            console.warn(`[extractTextFromFile] No text extracted from ${file.name}`);
-          }
-          
+
+
           resolve({
             name: file.name,
             size: file.size,
@@ -51,28 +46,22 @@ const DocumentRAG = () => {
           reject(err);
         }
       };
-      
+
       reader.onerror = (error) => {
         console.error(`[extractTextFromFile] FileReader error:`, error);
         reject(new Error(`Failed to read file: ${file.name}`));
       };
-      
+
       // Read as text (works for .txt, .md, and sometimes PDF)
-      console.log(`[extractTextFromFile] Calling readAsText for ${file.name}`);
       reader.readAsText(file);
     });
   };
 
   const handleFileUpload = async (e) => {
-    console.log('=== handleFileUpload triggered ===');
-    console.log('Event target:', e.target);
-    console.log('Event target files:', e.target.files);
-    
+
     const files = Array.from(e.target.files || []);
-    console.log(`Files selected: ${files.length}`);
-    
+
     if (!files.length) {
-      console.log('No files selected, returning');
       return;
     }
 
@@ -82,27 +71,22 @@ const DocumentRAG = () => {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        console.log(`Processing file ${i + 1}/${files.length}: ${file.name} (${file.type}, ${file.size} bytes)`);
-        
+
         setUploadProgress(Math.round(((i + 1) / files.length) * 100));
 
         // Validate file type
-        if (!['text/plain', 'text/markdown', 'application/pdf'].includes(file.type) && !file.name.endsWith('.md')) {
-          const errorMsg = `File ${file.name} is not supported. Please upload .txt, .md, or .pdf files.`;
-          console.warn(errorMsg);
+        if (!['text/plain', 'text/markdown'].includes(file.type) && !file.name.endsWith('.md')) {
+          const errorMsg = `File ${file.name} is not supported. Please upload .txt or .md files. PDF uploads are not supported yet.`;
           setError(errorMsg);
           continue;
         }
 
-        console.log(`Extracting text from ${file.name}...`);
         const doc = await extractTextFromFile(file);
-        console.log(`Successfully extracted text: ${doc.content.length} characters`);
-        
+
         setDocuments((prev) => [...prev, doc]);
         setSelectedDoc(doc);
         setMessages([]);
         setAnswer('');
-        console.log(`Document added to state`);
       }
     } catch (err) {
       console.error('Error in handleFileUpload:', err);
@@ -118,24 +102,11 @@ const DocumentRAG = () => {
 
   const callDocumentAnalysisAPI = async (docContent, userQuestion) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiUrl}/api/analysis/document`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          documentContent: docContent,
-          question: userQuestion
-        }),
+      const { data } = await apiClient.post('/analysis/document', {
+        documentContent: docContent,
+        question: userQuestion
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to analyze document');
-      }
-
-      const data = await response.json();
       if (data.success && data.data) {
         return {
           answer: data.data.answer,
@@ -146,7 +117,7 @@ const DocumentRAG = () => {
       throw new Error('Invalid response from server');
     } catch (err) {
       console.error('Document Analysis API Error:', err);
-      throw new Error(err.message || 'Failed to analyze the document. Please try again.');
+      throw new Error(err.response?.data?.error?.message || err.message || 'Failed to analyze the document. Please try again.');
     }
   };
 
@@ -292,7 +263,7 @@ Format the response clearly with sections.`;
               multiple
               ref={fileInputRef}
               onChange={handleFileUpload}
-              accept=".txt,.md,.pdf"
+              accept=".txt,.md"
               className="file-input"
               disabled={loading}
               id="doc-file-input"
@@ -300,7 +271,7 @@ Format the response clearly with sections.`;
             <label htmlFor="doc-file-input" className="upload-label">
               <div className="upload-icon">📤</div>
               <span>Upload Documents</span>
-              <small>Supported: .txt, .md, .pdf</small>
+              <small>Supported: .txt, .md (PDF not yet supported)</small>
             </label>
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div className="progress-bar">
@@ -424,7 +395,7 @@ Format the response clearly with sections.`;
               <div className="state-icon">📄</div>
               <h2>No Document Selected</h2>
               <p>Upload a document from the left sidebar to get started</p>
-              <p className="hint">Supported formats: .txt, .md, .pdf</p>
+              <p className="hint">Supported formats: .txt, .md</p>
             </div>
           )}
         </div>

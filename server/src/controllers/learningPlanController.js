@@ -68,7 +68,6 @@ export const createPlan = async (req, res, next) => {
       userProfile = await UserProfile.findOne({ userId: req.user.id });
     } catch (error) {
       // Continue without profile if not found
-      console.log('User profile not found, continuing without it');
     }
 
     // Prepare profile data for AI

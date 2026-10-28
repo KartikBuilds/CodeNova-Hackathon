@@ -82,9 +82,9 @@ quizSessionSchema.methods.calculateScore = function () {
   if (!Array.isArray(this.questions) || !Array.isArray(this.answers)) {
     return;
   }
-  
+
   let correctAnswers = 0;
-  
+
   this.questions.forEach((question, index) => {
     if (this.answers[index] && question.correctAnswer) {
       if (this.answers[index] === question.correctAnswer) {
@@ -92,10 +92,10 @@ quizSessionSchema.methods.calculateScore = function () {
       }
     }
   });
-  
+
   this.score = correctAnswers;
   this.total = this.questions.length;
-  
+
   return this.save();
 };
 

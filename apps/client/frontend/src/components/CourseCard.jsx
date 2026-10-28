@@ -10,8 +10,8 @@ const CourseCard = ({ course }) => {
   };
 
   return (
-    <Link 
-      to={`/course/${course._id || course.id}`} 
+    <Link
+      to={`/course/${course._id || course.id}`}
       className="group block"
     >
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-2 transition-all duration-300 h-full flex flex-col">
@@ -24,12 +24,12 @@ const CourseCard = ({ course }) => {
             {course.domain}
           </span>
         </div>
-        
+
         {/* Description */}
         <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-6 flex-1">
           {course.description || 'No description available'}
         </p>
-        
+
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-slate-100">
           <div className="flex items-center gap-3">
@@ -45,7 +45,7 @@ const CourseCard = ({ course }) => {
               </span>
             )}
           </div>
-          
+
           <span className="text-indigo-600 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
             View
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

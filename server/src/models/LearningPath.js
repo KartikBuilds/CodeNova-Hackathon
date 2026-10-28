@@ -56,7 +56,7 @@ learningPathSchema.index({ userId: 1 });
 // Virtual for progress percentage
 learningPathSchema.virtual('progressPercentage').get(function () {
   if (!this.path || this.path.length === 0) return 0;
-  
+
   const completed = this.path.filter(item => item.status === 'completed').length;
   return Math.round((completed / this.path.length) * 100);
 });
@@ -76,19 +76,19 @@ learningPathSchema.methods.updateModuleStatus = function (moduleId, status) {
   const moduleIndex = this.path.findIndex(
     item => item.moduleId.toString() === moduleId.toString()
   );
-  
+
   if (moduleIndex !== -1) {
     this.path[moduleIndex].status = status;
-    
+
     if (status === 'in-progress' && !this.path[moduleIndex].startedAt) {
       this.path[moduleIndex].startedAt = new Date();
     }
-    
+
     if (status === 'completed') {
       this.path[moduleIndex].completedAt = new Date();
     }
   }
-  
+
   return this.save();
 };
 

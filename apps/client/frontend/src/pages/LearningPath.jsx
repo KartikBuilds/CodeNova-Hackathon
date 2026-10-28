@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/apiClient';
 import Toast from '../components/Toast';
@@ -39,58 +39,28 @@ const LearningPath = () => {
     }, 4000);
   };
 
-  useEffect(() => {
-    fetchUserDomain();
-  }, []);
-
-  const fetchUserDomain = async () => {
-    try {
-      const response = await api.get('/profile');
-      console.log('Profile response:', response.data); // Debug log
-      
-      // Handle nested data structure
-      const profileData = response.data?.data || response.data;
-      const userDomain = profileData?.primaryDomain;
-      
-      if (userDomain) {
-        setDomain(userDomain);
-        fetchLearningPath(userDomain);
-      } else {
-        setError('Please set your primary domain in profile first');
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-      setError('Please complete your profile first');
-      setLoading(false);
-    }
-  };
-
-  const fetchLearningPath = async (userDomain) => {
+  const fetchLearningPath = useCallback(async (userDomain) => {
     setLoading(true);
     try {
       // Try multiple API endpoints
       let response;
       let pathData = null;
-      
+
       try {
         response = await api.get(`/learning/path?domain=${userDomain}`);
         pathData = response.data?.data?.learningPath || response.data?.learningPath || response.data;
-      } catch (firstError) {
-        console.log('First API call failed, trying alternative endpoint');
+      } catch {
         try {
           response = await api.get('/learning/path');
           pathData = response.data?.data?.learningPath || response.data?.learningPath || response.data;
-        } catch (secondError) {
-          console.log('Second API call failed, trying to generate new path');
+        } catch {
           await api.post('/learning/path/rebuild');
           response = await api.get('/learning/path');
           pathData = response.data?.data?.learningPath || response.data?.learningPath || response.data;
         }
       }
-      
-      console.log('Learning path response:', response.data);
-      
+
+
       if (pathData && pathData.path && pathData.path.length > 0) {
         setLearningPath(pathData);
         setError('');
@@ -103,7 +73,33 @@ const LearningPath = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const fetchUserDomain = useCallback(async () => {
+    try {
+      const response = await api.get('/profile');
+
+      // Handle nested data structure
+      const profileData = response.data?.data || response.data;
+      const userDomain = profileData?.primaryDomain;
+
+      if (userDomain) {
+        setDomain(userDomain);
+        fetchLearningPath(userDomain);
+      } else {
+        setError('Please set your primary domain in profile first');
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setError('Please complete your profile first');
+      setLoading(false);
+    }
+  }, [fetchLearningPath]);
+
+  useEffect(() => {
+    fetchUserDomain();
+  }, [fetchUserDomain]);
 
   const handleRebuildPath = async () => {
     setLoading(true);
@@ -128,7 +124,7 @@ const LearningPath = () => {
         domain,
         status: newStatus
       });
-      
+
       showToast('Progress updated!', 'success');
       fetchLearningPath(domain);
     } catch (err) {
@@ -139,35 +135,35 @@ const LearningPath = () => {
 
   const addInterest = () => {
     if (interestInput.trim() && !profileData.interests.includes(interestInput.trim())) {
-      setProfileData({ 
-        ...profileData, 
-        interests: [...profileData.interests, interestInput.trim()] 
+      setProfileData({
+        ...profileData,
+        interests: [...profileData.interests, interestInput.trim()]
       });
       setInterestInput('');
     }
   };
 
   const removeInterest = (index) => {
-    setProfileData({ 
-      ...profileData, 
-      interests: profileData.interests.filter((_, i) => i !== index) 
+    setProfileData({
+      ...profileData,
+      interests: profileData.interests.filter((_, i) => i !== index)
     });
   };
 
   const addGoal = () => {
     if (goalInput.trim() && !profileData.learningGoals.includes(goalInput.trim())) {
-      setProfileData({ 
-        ...profileData, 
-        learningGoals: [...profileData.learningGoals, goalInput.trim()] 
+      setProfileData({
+        ...profileData,
+        learningGoals: [...profileData.learningGoals, goalInput.trim()]
       });
       setGoalInput('');
     }
   };
 
   const removeGoal = (index) => {
-    setProfileData({ 
-      ...profileData, 
-      learningGoals: profileData.learningGoals.filter((_, i) => i !== index) 
+    setProfileData({
+      ...profileData,
+      learningGoals: profileData.learningGoals.filter((_, i) => i !== index)
     });
   };
 
@@ -194,11 +190,11 @@ const LearningPath = () => {
 
       setDomain(profileData.primaryDomain);
       setShowProfileSetup(false);
-      
+
       // Generate learning path
       await api.post('/learning/path/rebuild');
       await fetchLearningPath(profileData.primaryDomain);
-      
+
       showToast('Profile saved and learning path generated!', 'success');
     } catch (err) {
       console.error('Error saving profile:', err);
@@ -235,8 +231,8 @@ const LearningPath = () => {
               <h2 className="text-2xl font-bold text-slate-900 mb-2">Set Up Your Learning Path</h2>
               <p className="text-slate-600 mb-6">{error}</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button 
-                  onClick={() => setShowProfileSetup(true)} 
+                <button
+                  onClick={() => setShowProfileSetup(true)}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -244,8 +240,8 @@ const LearningPath = () => {
                   </svg>
                   Set Up Here
                 </button>
-                <button 
-                  onClick={() => navigate('/profile')} 
+                <button
+                  onClick={() => navigate('/profile')}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-all"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -261,7 +257,7 @@ const LearningPath = () => {
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Quick Profile Setup</h2>
                 <p className="text-slate-600">Set up your learning preferences to generate a personalized learning path.</p>
               </div>
-              
+
               <div className="p-6 space-y-6">
                 {/* Domain and Level */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -303,9 +299,9 @@ const LearningPath = () => {
                       placeholder="Add an interest (e.g., React, Python)"
                       className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     />
-                    <button 
-                      type="button" 
-                      onClick={addInterest} 
+                    <button
+                      type="button"
+                      onClick={addInterest}
                       className="px-5 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors"
                     >
                       Add
@@ -337,9 +333,9 @@ const LearningPath = () => {
                       placeholder="Add a learning goal (e.g., Build a web app)"
                       className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     />
-                    <button 
-                      type="button" 
-                      onClick={addGoal} 
+                    <button
+                      type="button"
+                      onClick={addGoal}
                       className="px-5 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors"
                     >
                       Add
@@ -421,7 +417,7 @@ const LearningPath = () => {
                 Your Learning Path
               </h1>
               <p className="text-lg text-indigo-600 font-semibold capitalize">{domain}</p>
-              
+
               <div className="mt-4">
                 <div className="flex flex-wrap items-center gap-4 mb-3">
                   <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 rounded-full text-sm font-medium text-slate-700">
@@ -438,7 +434,7 @@ const LearningPath = () => {
                   </span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-3">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-indigo-600 to-purple-600 h-3 rounded-full transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
@@ -446,8 +442,8 @@ const LearningPath = () => {
               </div>
             </div>
 
-            <button 
-              onClick={handleRebuildPath} 
+            <button
+              onClick={handleRebuildPath}
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -464,7 +460,7 @@ const LearningPath = () => {
             const module = pathModule.moduleId;
             const course = module?.courseId;
             const status = pathModule.status || 'not-started';
-            
+
             if (!module) return null;
 
             const getStatusColor = () => {
@@ -489,13 +485,13 @@ const LearningPath = () => {
                 {index < pathModules.length - 1 && (
                   <div className="absolute left-6 top-16 w-0.5 h-20 bg-slate-200 z-0"></div>
                 )}
-                
+
                 <div className="flex gap-4">
                   {/* Timeline Marker */}
                   <div className="flex flex-col items-center">
                     <div className={`w-12 h-12 rounded-full border-4 ${getStatusColor()} flex items-center justify-center text-white font-bold z-10`}>
-                      {status === 'completed' ? '✓' : 
-                       status === 'in-progress' ? '▶' : 
+                      {status === 'completed' ? '✓' :
+                       status === 'in-progress' ? '▶' :
                        index + 1}
                     </div>
                   </div>
@@ -524,7 +520,7 @@ const LearningPath = () => {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        <button 
+                        <button
                           onClick={() => handleModuleClick(module._id)}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
                         >
@@ -536,7 +532,7 @@ const LearningPath = () => {
                         </button>
 
                         {status === 'not-started' && (
-                          <button 
+                          <button
                             onClick={() => handleUpdateStatus(module._id, 'in-progress')}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                           >
@@ -548,7 +544,7 @@ const LearningPath = () => {
                         )}
 
                         {status === 'in-progress' && (
-                          <button 
+                          <button
                             onClick={() => handleUpdateStatus(module._id, 'completed')}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                           >
@@ -560,7 +556,7 @@ const LearningPath = () => {
                         )}
 
                         {status === 'completed' && (
-                          <button 
+                          <button
                             onClick={() => handleUpdateStatus(module._id, 'in-progress')}
                             className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
                           >

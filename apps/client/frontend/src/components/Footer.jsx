@@ -48,7 +48,7 @@ const Footer = () => {
           <p className="text-slate-400 text-sm mb-2">
             © {currentYear} LearnAI. All rights reserved.
           </p>
-          
+
         </div>
       </div>
     </footer>

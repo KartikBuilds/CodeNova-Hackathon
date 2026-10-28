@@ -80,7 +80,7 @@ export const updateProfile = async (req, res) => {
       if (updateData.primaryDomain !== undefined) profile.primaryDomain = updateData.primaryDomain;
       if (updateData.level !== undefined) profile.level = updateData.level;
       if (updateData.goals !== undefined) profile.goals = updateData.goals;
-      
+
       // Update other fields
       if (updateData.profileImage !== undefined) profile.profileImage = updateData.profileImage;
       if (updateData.bio !== undefined) profile.bio = updateData.bio;

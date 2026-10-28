@@ -66,7 +66,7 @@ const CourseDetail = () => {
     <div className="course-detail-container">
       <div className="course-detail-header">
         <Link to="/catalog" className="back-link">← Back to Catalog</Link>
-        
+
         <div className="course-detail-title-section">
           <h1>{course.title || course.name}</h1>
           <div className="course-detail-meta">
@@ -98,7 +98,7 @@ const CourseDetail = () => {
 
       <div className="course-modules-section">
         <h2>Course Modules</h2>
-        
+
         {course.modules && course.modules.length > 0 ? (
           <div className="modules-list">
             {course.modules.map((module, index) => (

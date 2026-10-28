@@ -6,7 +6,7 @@ import UserProfile from '../models/UserProfile.js';
 const generateToken = (userId) => {
   return jwt.sign(
     { id: userId },
-    process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+    process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRE || '30d' }
   );
 };

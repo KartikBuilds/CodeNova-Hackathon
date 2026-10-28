@@ -1,6 +1,6 @@
 /**
  * AI Service - Handles all AI-powered features using LangChain + Groq
- * 
+ *
  * This service provides:
  * - Quiz generation based on topic and difficulty
  * - Performance analysis from quiz results
@@ -49,7 +49,7 @@ class AIServiceUnavailableError extends Error {
 
 /**
  * Generate a quiz based on topic, difficulty, and learner weaknesses
- * 
+ *
  * @param {Object} params - Quiz generation parameters
  * @param {string} params.topic - The topic for the quiz
  * @param {string} params.difficulty - Difficulty level (easy, medium, hard)
@@ -99,7 +99,7 @@ Return ONLY valid JSON with this EXACT structure:
 Generate {count} questions now.
 `);
 
-    const weaknessContext = weaknesses.length > 0 
+    const weaknessContext = weaknesses.length > 0
       ? `Focus areas (learner weaknesses): ${weaknesses.join(', ')}`
       : 'Cover a broad range of concepts';
 
@@ -112,7 +112,7 @@ Generate {count} questions now.
 
     const parser = new JsonOutputParser();
     const response = await llm.invoke(formattedPrompt);
-    
+
     let quizData;
     try {
       // Try parsing the response content
@@ -151,7 +151,7 @@ Generate {count} questions now.
 
 /**
  * Analyze learner's performance from quiz results
- * 
+ *
  * @param {Object} resultsJson - Quiz results to analyze
  * @param {number} resultsJson.score - Number of correct answers
  * @param {number} resultsJson.total - Total number of questions
@@ -161,7 +161,7 @@ Generate {count} questions now.
  */
 export const analyzePerformance = async (resultsJson) => {
   const llm = getGroqLLM();
-  
+
   if (!llm || !isAIAvailable()) {
     return analyzePerformanceMock(resultsJson);
   }
@@ -204,7 +204,7 @@ Be encouraging but honest. Provide actionable insights.
 `);
 
     const wrongAnswersDetails = wrongAnswers.length > 0
-      ? wrongAnswers.map((wa, idx) => 
+      ? wrongAnswers.map((wa, idx) =>
           `${idx + 1}. Q: ${wa.question}\n   Your answer: ${wa.userAnswer}\n   Correct: ${wa.correctAnswer}`
         ).join('\n\n')
       : 'All answers were correct!';
@@ -218,7 +218,7 @@ Be encouraging but honest. Provide actionable insights.
     });
 
     const response = await llm.invoke(formattedPrompt);
-    
+
     let analysisData;
     try {
       analysisData = JSON.parse(response.content);
@@ -241,7 +241,7 @@ Be encouraging but honest. Provide actionable insights.
 
 /**
  * Create a personalized learning plan based on user profile
- * 
+ *
  * @param {Object} profileJson - User profile and learning preferences
  * @param {string} profileJson.domain - Subject domain
  * @param {string} profileJson.currentLevel - Current skill level
@@ -261,13 +261,13 @@ export const createLearningPlan = async (profileJson) => {
   }
 
   try {
-    const { 
-      domain = 'General Learning', 
+    const {
+      domain = 'General Learning',
       currentLevel = 'beginner',
       weaknesses = [],
       studyTimePerDay = 30,
       learningStyle = 'visual',
-      days = 7 
+      days = 7
     } = profileJson;
 
     const planPrompt = PromptTemplate.fromTemplate(`
@@ -315,37 +315,37 @@ Generate {days} days of structured learning. Output valid JSON only.
     });
 
     const response = await llm.invoke(formattedPrompt);
-    
+
     let planData;
     try {
       // Clean up response - remove markdown code blocks if present
       let jsonString = response.content.trim();
-      
+
       // Remove markdown code blocks
       if (jsonString.startsWith('```')) {
         jsonString = jsonString.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       }
-      
+
       // Try to find JSON object in the response
       const jsonStart = jsonString.indexOf('{');
       const jsonEnd = jsonString.lastIndexOf('}');
-      
+
       if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
         jsonString = jsonString.substring(jsonStart, jsonEnd + 1);
       }
-      
+
       // Try to fix common JSON issues
       jsonString = jsonString
         .replace(/,\s*}/g, '}') // Remove trailing commas
         .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
         .replace(/"\s*\n\s*"/g, '" "'); // Fix line breaks in strings
-      
+
       // If JSON seems incomplete, try to complete it
       const openBraces = (jsonString.match(/{/g) || []).length;
       const closeBraces = (jsonString.match(/}/g) || []).length;
       const openBrackets = (jsonString.match(/\[/g) || []).length;
       const closeBrackets = (jsonString.match(/]/g) || []).length;
-      
+
       // Add missing closing braces/brackets
       for (let i = 0; i < (openBraces - closeBraces); i++) {
         jsonString += '}';
@@ -353,7 +353,7 @@ Generate {days} days of structured learning. Output valid JSON only.
       for (let i = 0; i < (openBrackets - closeBrackets); i++) {
         jsonString += ']';
       }
-      
+
       planData = JSON.parse(jsonString);
     } catch (parseError) {
       console.error('Failed to parse learning plan:', parseError);
@@ -363,7 +363,7 @@ Generate {days} days of structured learning. Output valid JSON only.
 
     // Normalize the plan structure - handle different possible formats
     let normalizedPlan = planData;
-    
+
     // If the plan is directly in the response, wrap it properly
     if (Array.isArray(planData)) {
       normalizedPlan = {
@@ -380,7 +380,7 @@ Generate {days} days of structured learning. Output valid JSON only.
         }))
       };
     }
-    
+
     // If plan is in planData.plan, keep as is but ensure proper structure
     if (planData.plan && Array.isArray(planData.plan)) {
       normalizedPlan.plan = planData.plan.map((day, index) => ({
@@ -392,7 +392,7 @@ Generate {days} days of structured learning. Output valid JSON only.
         resources: day.resources || []
       }));
     }
-    
+
     // Ensure we have a valid plan structure
     if (!normalizedPlan.plan || !Array.isArray(normalizedPlan.plan) || normalizedPlan.plan.length === 0) {
       console.error('Invalid or empty plan structure, using fallback');
@@ -413,7 +413,7 @@ Generate {days} days of structured learning. Output valid JSON only.
 
 /**
  * AI Tutor chat - Answer questions and provide guidance
- * 
+ *
  * @param {string} message - User's question or message
  * @param {Object} context - Conversation context
  * @param {string} context.topic - Current topic being discussed
@@ -468,7 +468,7 @@ Be encouraging, clear, and educational.
     });
 
     const response = await llm.invoke(formattedPrompt);
-    
+
     let chatData;
     try {
       chatData = JSON.parse(response.content);
@@ -495,7 +495,7 @@ Be encouraging, clear, and educational.
 const generateQuizMock = async ({ topic, difficulty, weaknesses, count }) => {
   await mockDelay();
   const questions = [];
-  
+
   for (let i = 0; i < count; i++) {
     questions.push({
       id: `q${i + 1}`,
@@ -566,11 +566,11 @@ const analyzePerformanceMock = async (resultsJson) => {
 
 const createLearningPlanMock = async (profileJson) => {
   await mockDelay();
-  const { 
-    domain = 'General Learning', 
+  const {
+    domain = 'General Learning',
     weaknesses = ['Various topics'],
     studyTimePerDay = 30,
-    days = 7 
+    days = 7
   } = profileJson;
 
   const plan = [];
@@ -579,7 +579,7 @@ const createLearningPlanMock = async (profileJson) => {
   for (let day = 1; day <= days; day++) {
     const topicIndex = (day - 1) % topicsToFocus.length;
     const topic = topicsToFocus[topicIndex];
-    
+
     plan.push({
       day,
       topics: [topic],
@@ -588,9 +588,9 @@ const createLearningPlanMock = async (profileJson) => {
         `Practice ${topic} exercises for ${Math.round(studyTimePerDay * 0.3)} minutes`,
         `Review and take notes for ${Math.round(studyTimePerDay * 0.1)} minutes`
       ],
-      notes: day === 1 
+      notes: day === 1
         ? "Start with fundamentals. Take your time to understand core concepts."
-        : day === days 
+        : day === days
         ? "Final review day. Consolidate everything you've learned."
         : `Build on previous day's foundation. ${day > days / 2 ? 'Increase difficulty gradually.' : 'Focus on understanding.'}`
     });

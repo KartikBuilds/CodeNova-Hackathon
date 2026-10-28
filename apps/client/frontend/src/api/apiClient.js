@@ -6,12 +6,12 @@ const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
-  
+
   // 2. In production (Railway), use relative path to same origin
   if (import.meta.env.PROD) {
     return '/api';
   }
-  
+
   // 3. In development, use localhost
   return 'http://localhost:5000/api';
 };
@@ -57,16 +57,16 @@ apiClient.interceptors.response.use(
 export const api = {
   // GET request
   get: (url, config = {}) => apiClient.get(url, config),
-  
+
   // POST request
   post: (url, data, config = {}) => apiClient.post(url, data, config),
-  
+
   // PUT request
   put: (url, data, config = {}) => apiClient.put(url, data, config),
-  
+
   // PATCH request
   patch: (url, data, config = {}) => apiClient.patch(url, data, config),
-  
+
   // DELETE request
   delete: (url, config = {}) => apiClient.delete(url, config),
 };

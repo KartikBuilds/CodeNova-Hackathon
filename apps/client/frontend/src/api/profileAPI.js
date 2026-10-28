@@ -82,18 +82,14 @@ export const learningPlanAPI = {
  * Combined operation: Update profile and rebuild learning path
  */
 export const updateProfileAndRebuildPath = async (profileData) => {
-  try {
-    // Update profile
-    const profileResponse = await profileAPI.updateProfile(profileData);
-    
-    // Rebuild learning path
-    const pathResponse = await learningPathAPI.rebuildPath();
-    
-    return {
-      profile: profileResponse,
-      path: pathResponse,
-    };
-  } catch (error) {
-    throw error;
-  }
+  // Update profile
+  const profileResponse = await profileAPI.updateProfile(profileData);
+
+  // Rebuild learning path
+  const pathResponse = await learningPathAPI.rebuildPath();
+
+  return {
+    profile: profileResponse,
+    path: pathResponse,
+  };
 };

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useProfile } from '../context/ProfileContext';
+import { useAuth } from '../hooks/useAuth';
+import { useProfile } from '../hooks/useProfile';
 import { api } from '../api/apiClient';
 import Toast from '../components/Toast';
 import ProfileImageSelector from '../components/ProfileImageSelector';
@@ -21,7 +20,6 @@ const Profile = () => {
   });
   const [interestInput, setInterestInput] = useState('');
   const [goalInput, setGoalInput] = useState('');
-  const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [showAssetImages, setShowAssetImages] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,8 +27,7 @@ const Profile = () => {
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [hasProfile, setHasProfile] = useState(false);
-  
-  const navigate = useNavigate();
+
   const { user } = useAuth();
   const { profile, updateProfile: updateProfileContext, fetchProfile: refetchProfile } = useProfile();
 

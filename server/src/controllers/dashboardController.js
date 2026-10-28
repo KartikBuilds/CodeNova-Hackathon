@@ -27,7 +27,7 @@ export const getDashboardSummary = async (req, res, next) => {
 
     // Analyze topics performance
     const topicPerformance = {};
-    
+
     quizSessions.forEach(session => {
       const topic = session.topic;
       if (!topicPerformance[topic]) {
@@ -39,7 +39,7 @@ export const getDashboardSummary = async (req, res, next) => {
           averagePercentage: 0
         };
       }
-      
+
       topicPerformance[topic].totalQuizzes++;
       topicPerformance[topic].totalScore += session.score;
       topicPerformance[topic].totalQuestions += session.total;
@@ -168,7 +168,7 @@ export const getActivity = async (req, res, next) => {
 
     // Group activities by date
     const activityByDate = {};
-    
+
     quizSessions.forEach(session => {
       const dateKey = session.createdAt.toISOString().split('T')[0];
       if (!activityByDate[dateKey]) {
@@ -179,7 +179,7 @@ export const getActivity = async (req, res, next) => {
           correctAnswers: 0
         };
       }
-      
+
       activityByDate[dateKey].quizzes++;
       activityByDate[dateKey].totalQuestions += session.total;
       activityByDate[dateKey].correctAnswers += session.score;
@@ -215,7 +215,7 @@ export const getTopicBreakdown = async (req, res, next) => {
 
     // Analyze performance by topic
     const topicStats = {};
-    
+
     quizSessions.forEach(session => {
       const topic = session.topic;
       if (!topicStats[topic]) {
@@ -231,15 +231,15 @@ export const getTopicBreakdown = async (req, res, next) => {
           trend: 'stable'
         };
       }
-      
+
       const percentage = Math.round((session.score / session.total) * 100);
-      
+
       topicStats[topic].attempts++;
       topicStats[topic].totalScore += session.score;
       topicStats[topic].totalQuestions += session.total;
       topicStats[topic].bestScore = Math.max(topicStats[topic].bestScore, percentage);
       topicStats[topic].worstScore = Math.min(topicStats[topic].worstScore, percentage);
-      
+
       if (session.createdAt > topicStats[topic].lastAttempt) {
         topicStats[topic].lastAttempt = session.createdAt;
       }
@@ -247,17 +247,17 @@ export const getTopicBreakdown = async (req, res, next) => {
 
     // Calculate average scores
     Object.values(topicStats).forEach(stat => {
-      stat.averageScore = stat.totalQuestions > 0 
+      stat.averageScore = stat.totalQuestions > 0
         ? Math.round((stat.totalScore / stat.totalQuestions) * 100)
         : 0;
-      
+
       // Simple trend calculation: compare best and worst scores
       if (stat.bestScore - stat.worstScore > 20) {
         stat.trend = 'improving';
       } else if (stat.worstScore - stat.bestScore > 20) {
         stat.trend = 'declining';
       }
-      
+
       // Clean up temporary fields
       delete stat.totalScore;
       delete stat.totalQuestions;
