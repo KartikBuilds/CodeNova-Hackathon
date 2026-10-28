@@ -13,12 +13,12 @@ CodeNova helps learners study with AI: an AI tutor, generated quizzes, flashcard
 - **Learning paths and plans:** structured study plans based on your profile and quiz results.
 - **Dashboard:** progress summaries for signed-in users.
 
-## Stack
+## Tech Stack
 
 - **Frontend:** React 19, Vite, React Router, Recharts, Tailwind CSS
 - **Backend:** Node.js, Express, MongoDB (Mongoose), LangChain with Groq
 
-## Quick start
+## Getting Started
 
 Requirements: Node.js 18 or newer, npm 9 or newer, and a MongoDB instance (local or Atlas).
 
