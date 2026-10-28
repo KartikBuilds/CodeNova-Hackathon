@@ -107,7 +107,7 @@ Limitations: tokens last 30 days and are stored in `localStorage`, so a cross-si
 
 ## Deployment
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for Railway and Docker instructions, and [docs/PRODUCTION_CHECKLIST.md](docs/PRODUCTION_CHECKLIST.md) before going live.
+The app runs as a single Express process that also serves the built frontend, so it deploys as one service. `railway.toml` configures Railway, and the root `Dockerfile` and `docker-compose.yml` cover Docker. Set the variables in the Configuration table above in your host's environment, and set `ALLOWED_ORIGINS` to your public domain.
 
 ## License
 
