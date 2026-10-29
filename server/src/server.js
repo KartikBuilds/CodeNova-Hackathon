@@ -3,6 +3,15 @@ import 'dotenv/config';
 import app from './app.js';
 import connectDB from './config/db.js';
 
+// DEBUG: Log all available environment variables
+console.log('\n=== ENVIRONMENT VARIABLE DIAGNOSTICS ===');
+console.log('JWT_SECRET defined:', !!process.env.JWT_SECRET);
+console.log('MONGO_URI defined:', !!process.env.MONGO_URI);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+console.log('All env vars:', Object.keys(process.env).filter(k => !k.includes('PATH')).sort());
+console.log('========================================\n');
+
 // Fail fast: tokens signed with a missing/known-default secret can be forged by anyone
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your-secret-key-change-in-production') {
   console.error('FATAL: JWT_SECRET must be set to a secure, non-default value.');
